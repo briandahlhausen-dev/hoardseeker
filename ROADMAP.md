@@ -8,8 +8,9 @@
 ## Status
 
 - **Current phase**: Phase 0 (project setup)
-- **Last updated**: project start
-- **Target launch**: month 18 (with 4-month buffer to month 22)
+- **Last updated**: 2026-05-08 (bootstrap realignment)
+- **Target launch**: month 18-20 (with buffer to month 22)
+- **Mode**: Bootstrap (<$5k total project budget). See `DECISIONS.md` for full implications.
 
 ---
 
@@ -132,25 +133,29 @@
 
 ---
 
-## Phase 7 — Content build-out (months 8-12)
+## Phase 7 — Content build-out (months 8-12, bootstrap-mode workflow)
 
-**Goal**: All 12 classes, 6 races, and all 4 biomes implemented.
+**Goal**: All 12 classes, 6 races (mechanically), and 2 launch biomes implemented. (Biomes 3-4 deferred to post-launch updates per `DECISIONS.md`.)
 
-- [ ] Classes 3-12 implemented: Rogue, Cleric, Barbarian, Ranger, Bard, Sorcerer, Warlock, Druid, Paladin, Monk
+- [ ] Classes 3-12 implemented (Claude-authored, user-reviewed): Rogue, Cleric, Barbarian, Ranger, Bard, Sorcerer, Warlock, Druid, Paladin, Monk
+  - [ ] Druid Wild Shape subsystem (alternate combat mode) — design + implementation buffer
+  - [ ] Ranger pet companion subsystem (second controllable actor) — design + implementation buffer
 - [ ] Races 2-6 implemented as data + perks: Elf, Dwarf, Halfling, Half-Orc, Tiefling
-- [ ] Race portrait variants: 6 races × 12 classes × 3 variants = 216 portraits (largest single art ask)
-- [ ] Biomes 2-4 implemented: Sunken Halls, Ember Reach, Astral Vault
-- [ ] Bosses 2-4 implemented: Drowned Empress, Forgemaster, Architect
-- [ ] All ~250 abilities authored
+- [ ] Race differentiation: shared base portraits + ~6 color/accessory overlay layers (~36-48 portrait variants total, NOT 216 unique illustrations)
+- [ ] Biome 2 implemented: Sunken Halls + Drowned Empress boss
+- [ ] All ~250 abilities authored as `.tres` (Claude-fast; user reviews + cleans icons)
 - [ ] All ~80 artifacts authored
-- [ ] All ~60 monsters authored
-- [ ] DM narration: voice actor contracted, ~200 lines recorded
-- [ ] Composer: contracted, full ~90 minutes of music delivered
+- [ ] All ~30 launch-biome monsters authored, AI behaviors
+- [ ] DM narration: ~80-100 cues written, parchment overlay system implemented (text-only, no VA)
+- [ ] Music: royalty-free curation in `audio/MUSIC_LICENSES.md`; one signature theme commissioned (~$300) and delivered
+- [ ] SFX: Freesound CC0 sound bank assembled, custom dice clack recorded
 - [ ] Localization-ready: all strings extracted
+- [ ] Asset cleanup pass: every shipped portrait/icon/background hand-touched in Krita per `VIBE_CODING.md` workflow
 - [ ] **Quarterly modularity audit** at month 9 (end of Q3)
 - [ ] **Quarterly modularity audit** at month 12 (end of Q4)
+- [ ] **Bootstrap budget reality check** at month 9 and month 12 (spend-to-date vs $5k cap)
 
-**Gate to Phase 8**: Full content is in. Game is playable end-to-end as a complete solo experience.
+**Gate to Phase 8**: All 12 classes built. 2 launch biomes complete. Game playable end-to-end as a complete solo experience. Asset cleanup discipline holding (every shipped asset hand-touched). Bootstrap budget on track.
 
 ---
 
@@ -190,55 +195,59 @@
 
 ---
 
-## Phase 10 — Launch prep (months 17-18)
+## Phase 10 — Launch prep (months 17-19)
 
-**Goal**: Final polish. Marketing push. Publisher partnership locked.
+**Goal**: Final polish. Marketing push. Self-publish baseline; publisher partnership only if it materializes on favorable terms.
 
-- [ ] Publisher contract signed (target: Playstack, Hooded Horse, Future Friends, or equivalent)
-- [ ] Localization complete for launch languages (English + ~3 others)
-- [ ] Final trailer (1.5-2 minutes, story + class showcase + duo + ranked)
+- [ ] Publisher conversation outcome: signed (target Playstack, Hooded Horse, Future Friends, or equivalent) OR self-publish path locked. Self-publish is the baseline assumption under bootstrap mode.
+- [ ] **English-only at launch.** Localization deferred to year 2 post-launch contingent on revenue.
+- [ ] Final trailer (1.5-2 minutes, dice-and-crits showcase + duo + ranked)
 - [ ] Press kit prepared and distributed
-- [ ] Influencer kit + early access keys distributed
+- [ ] Influencer kit + early access keys distributed (free keys, no paid UA budget)
 - [ ] Cloud saves verified, achievements live
 - [ ] Final QA pass
+- [ ] AI-content disclosure on Steam page complete and accurate per Steam policy
+- [ ] Public "How this art was made" statement live (project website / Discord)
 - [ ] Launch day plan: streamer-watch streams, Discord events
 
-**Gate to Phase 11**: Wishlist count target hit (50k+). Publisher confirms launch readiness. No critical bugs.
+**Gate to Phase 11**: Wishlist count target hit (25k-50k+ realistic under bootstrap-tier production; 50k+ a stretch). No critical bugs. AI disclosure compliant.
 
 ---
 
-## Phase 11 — Launch (week of month 18, with 4-month buffer to month 22)
+## Phase 11 — Launch (week of month 18-20, with buffer to month 22)
 
 **Goal**: Ship.
 
-- [ ] Steam launch
+- [ ] Steam launch (PC only)
 - [ ] Day 1 patch ready (small fixes only)
 - [ ] Live community management — Discord, Steam forums, Reddit
 - [ ] Streamer support: keys, schedule for high-profile streams
 - [ ] Day 7 retrospective: review sales, reviews, common complaints
+- [ ] Active monitoring of AI-disclosure-related review sentiment; respond honestly to questions
 
-**Success metrics**:
-- 25k-100k copies week 1 (depending on wishlist conversion)
-- >85% positive Steam reviews
-- 1k+ concurrent players in week 1
-- Discord >5k members in month 1
+**Success metrics (bootstrap-realistic)**:
+- 5k-30k copies week 1 under self-publish (higher with publisher partnership)
+- >80% positive Steam reviews (AI disclosure may suppress this slightly vs hand-painted indies)
+- 200-1k concurrent players in week 1
+- Discord >1k members in month 1
+
+**Break-even math** under bootstrap mode: at $14.99 base price and ~70% Steam revenue share after VAT, break-even is around 500-700 copies (covers Steam Direct, domain, AI subscriptions, signature theme commission, LLC overhead). Anything above is profit / reinvestment in post-launch content.
 
 ---
 
 ## Post-launch (months 19-30)
 
-**Year 1 live operations**:
+**Year 1 live operations** (bootstrap-mode cadence):
 
 - **Month 19-20**: Patch cadence weekly. Bug fixing, balance tuning.
-- **Month 21**: First content update — new class (Artificer or Blood Hunter — community vote). Free.
-- **Month 23**: Second content update — new biome (the Twisted Fey or the Outer Plane). Free.
-- **Month 25**: Crossover event with another indie roguelike (Balatro-style cosmetic exchange). Free.
-- **Month 27**: Third content update — new mode (Endless mode? PvP duels? TBD by community feedback).
-- **Month 30**: Major expansion announcement (paid, optional, ~$10).
+- **Month 21-22**: **Free content drop #1 — Biome 3 (The Ember Reach)** with The Forgemaster boss, ~15 new monsters, biome artifacts, narration. Includes one new commissioned theme (~$300) for the biome.
+- **Month 24-25**: Smaller free drop — additional artifacts, balance updates, possibly daily seed mode polish, possibly a new game mode (Endless? TBD by community feedback).
+- **Month 27-28**: **Free content drop #2 — Biome 4 (The Astral Vault)** with The Architect boss, ~15 new monsters, biome artifacts, narration.
+- **Month 30**: Year 2 retrospective. Decide on: paid expansion, sequel concept, sustained free-update mode, or wind-down.
 
-**Console ports**: months 24-30, via publisher. Switch first (matches the audience), then PS5/Xbox.
+**Console ports**: only via publisher partnership if available. Self-publish console launches are not feasible under bootstrap mode (devkit costs, certification fees). Defer indefinitely.
 
-**Year 2 plans**: TBD based on what year 1 data tells us. Possible: a sequel, a major expansion, a spin-off, or sustained free-update mode.
+**Year 2 plans**: TBD based on what year 1 data tells us. Possible: a paid expansion (introducing the cut classes' mechanics in new forms, new biomes), a sequel, a spin-off, or sustained free-update mode. **Localization** funding is a year-2 question — only viable if revenue supports it.
 
 ---
 
@@ -247,19 +256,23 @@
 | Risk | Likelihood | Mitigation |
 |---|---|---|
 | Vertical slice combat doesn't feel fun | Medium | Iterate up to 2 extra months on combat before expanding scope |
-| Content production falls behind | High | Cut from 12 to 8 classes at launch; ship the rest as free updates |
-| Multiplayer is too buggy at month 16 | Medium | Soft-launch duo as a 1.0 free update post-launch; ship solo at month 16-18 |
-| Wishlists below target | High | Extended demo period, more devlog, paid marketing as last resort |
-| Publisher partnership falls through | Medium | Self-publish on Steam; defer console ports |
-| Solo dev burns out | Medium | Strict 40-hour weeks, mandatory days off, regular playtester contact for motivation |
+| Content production falls behind | High | Cut Druid + Ranger to post-launch (10 launch classes instead of 12); ship the cut classes as the year-1 update cadence alongside biomes |
+| Druid Wild Shape or Ranger pet subsystem proves intractable | Medium | Pull the affected class to post-launch immediately; do not absorb the timeline cost |
+| Multiplayer is too buggy at month 18 | Medium | Soft-launch duo as a 1.0 free update post-launch; ship solo at month 18-20 |
+| AI-content review-bomb on Steam | Medium | Cleanup discipline + transparent disclosure + public process statement. Monitor reviews actively in first 30 days. |
+| Wishlists below target | High | Extended demo period, more devlog. Paid marketing not available under bootstrap; lean on free TikTok / dev community channels. |
+| Publisher partnership falls through | Medium-High under bootstrap mode | Self-publish on Steam (the baseline assumption); defer console ports indefinitely |
+| Solo dev burns out | Medium | Strict 40-hour weeks, mandatory days off, regular playtester contact for motivation. See `RESILIENCE.md` |
+| Bootstrap budget breached | Medium | Cut scope, not raise budget. Pivot triggers in `RESILIENCE.md` define the response. |
+| Steam tightens AI-content policy mid-development | Low-Medium | Maintain cleanup discipline so assets pass any reasonable disclosure standard. Worst case: rework affected assets. |
 | Engine limitation hit | Low | Godot 4 is mature for this scope; very unlikely |
 
 ---
 
 ## Notes on the timeline
 
-- **18 months is aggressive but doable** with strict scope discipline and AI-assisted development. AAA studios take 3-5 years for similar scope; 12-person indie teams take 2-3 years; solo dev with AI compresses this further but only if scope holds.
+- **18-20 months is the bootstrap-mode target** with strict scope discipline and Claude-assisted development. AAA studios take 3-5 years for similar scope; 12-person indie teams take 2-3 years; solo dev with Claude compresses this further but only if scope holds.
 - **22 months is the realistic max** before this becomes "the long Stardew Valley path" of 3-4 years.
 - **Anything past 24 months is a red flag** — stop, scope down, ship what you have.
 
-The fastest way to fail is to keep adding "just one more thing." The fastest way to succeed is to ship something tight, then expand post-launch as a live game.
+The fastest way to fail is to keep adding "just one more thing." The fastest way to succeed is to ship something tight, then expand post-launch as a live game. The 12-class / 2-biome launch is the **tight-but-marketable** scope chosen specifically to balance the marketing pitch against bootstrap-mode production reality. Cuts from here go to scope, not to budget.
