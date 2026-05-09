@@ -44,6 +44,11 @@ func _init() -> void:
 	var processor_test: Object = processor_script.new()
 	total_failures.append_array(_run("CommandProcessor", processor_test))
 
+	test_count += 1
+	var end_turn_script: Script = load("res://tests/test_end_turn_command.gd")
+	var end_turn_test: Object = end_turn_script.new()
+	total_failures.append_array(_run("EndTurnCommand", end_turn_test))
+
 	# --- Summary ---
 	print("================================================================")
 	if total_failures.is_empty():
