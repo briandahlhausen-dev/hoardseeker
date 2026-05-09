@@ -431,6 +431,37 @@ Total audio budget: ~$300-400.
 
 ---
 
+## 2026-05-08 — Adopt SESSION_PROTOCOL.md as the cross-session discipline
+
+**Status**: Decided
+
+**Context**: The bootstrap-realignment session surfaced how easily decisions can be made in conversation but never written down. Across an 18-22 month project with Claude as the primary engineer, lost decisions are a top-tier failure mode: by month 12, Claude works from stale assumptions and the user can't reconstruct what was agreed in month 4.
+
+**Decision**: Adopt `SESSION_PROTOCOL.md` as the canonical discipline for session management. The protocol defines:
+- Session-start ritual (read order, state-check, drift confirmation with the user)
+- Mid-session capture discipline (decisions go to `DECISIONS.md`, ideas to `IDEAS.md`, tech debt to `TECH_DEBT.md` — at the moment of consensus, not in a batch)
+- Session-end ritual (commit, modularity check, "Currently in flight" handoff)
+- Document hierarchy (which doc is canonical for what)
+- Templates for `IDEAS.md`, `TECH_DEBT.md`, `RECAPS.md`, and the "Currently in flight" section
+- Memory vs project doc relationship (project docs are canonical; Claude's auto-memory is for collaboration style)
+
+`CLAUDE.md` is updated to list `SESSION_PROTOCOL.md` as #3 in the session-start read order and to host the "Currently in flight" section at its bottom.
+
+**Rationale**:
+- Bootstrap-mode + 18-22 month timeline + AI-engineer collaboration model = high blast radius for lost decisions. The protocol exists to prevent that.
+- Mid-session capture (not batched at end-of-session) is the discipline that actually works; batched capture loses things.
+- The "Currently in flight" handoff section is the cheapest possible solution to the cold-start problem at the next session.
+- Centralizing the document hierarchy in one place prevents drift between docs over time.
+
+**Trade-offs**:
+- ~5 minutes of overhead per session for the start and end rituals.
+- Discipline is required: if Claude or the user skips capture in the moment, the protocol fails. The protocol cannot self-enforce.
+- One more doc to maintain. But it's small and stable; updates to the protocol itself go through DECISIONS.md.
+
+**Revisit if**: The protocol proves to lose more time than it saves (unlikely after the first month). Or if a fundamentally different working model emerges (e.g., the user becomes more technical and starts writing code themselves).
+
+---
+
 ## 2026-05-08 — Revised AI-content rule: AI art permitted in shipped product with cleanup + disclosure
 
 **Status**: Decided. Supersedes the original "Never ship AI-generated content as final art, music, or voice in a commercial release" rule in VIBE_CODING.md.
