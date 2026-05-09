@@ -11,9 +11,11 @@
 - **Tagline**: *Roll the dice. Raid the dungeon. Don't die alone.*
 - **Genre**: Turn-based roguelike with D&D-inspired combat, solo + duo co-op, ranked leaderboards
 - **Engine**: Godot 4 (GDScript)
-- **Target platforms**: Steam (PC) at launch; consoles via publisher post-launch
+- **Target platforms**: Steam (PC) at launch; console ports only via publisher partnership if available (deferred under bootstrap mode otherwise)
 - **Solo developer + AI-assisted (Claude Code)**
-- **Target launch**: 16-22 months from project start
+- **Target launch**: 18-20 months from project start (with buffer to 22)
+- **Mode**: **Bootstrap (<$5k total budget).** No contracted illustrator, composer, or voice actor at launch. Production model is AI generation + hand cleanup for art, royalty-free + one ~$300 commissioned theme for music, text-only narration. See `DECISIONS.md` (entries dated 2026-05-08) for the full realignment.
+- **Launch scope**: 12 classes, 2 biomes (Crypt + Sunken Halls). Biomes 3-4 ship as free post-launch updates over year 1-2.
 
 ## Read these in order, every session
 
@@ -79,7 +81,8 @@ To prevent scope creep, here's the explicit "no" list:
 - ❌ Crafting systems (curated artifacts only)
 - ❌ Player housing / cosmetic shops (not until far post-launch, if ever)
 - ❌ Mobile or web ports at launch (PC only)
-- ❌ Voice chat (text + ping system only — sparse DM narration is the only voice in the game)
+- ❌ Voice chat (text + ping system only)
+- ❌ Voice acting of any kind (narration is text-only forever — see `DECISIONS.md` for the bootstrap-mode decision)
 
 Adding any of these requires explicit user approval and a documented design discussion.
 
@@ -95,10 +98,16 @@ If an audit fails, **fixing it takes priority over adding new features**. No exc
 
 ## On asset creation
 
-Per VIBE_CODING.md, AI-generated content (Midjourney, Suno, ElevenLabs, etc.) is acceptable for *prototyping and references only*. Final shipped assets must be human-created or human-cleaned with explicit licensing. When the user asks for asset work:
+The AI-content rule was revised for bootstrap mode on 2026-05-08. See `VIBE_CODING.md` ("The AI-content rule") and `DECISIONS.md` ("Revised AI-content rule") for the full rule. Summary:
 
-- For prototypes / dev builds / mood boards: AI generation is fine.
-- For demo or launch builds: ask whether assets are placeholder or final. Refuse to commit AI-generated content as final without confirming the user understands the legal/policy implications.
+- **AI-generated visual art is permitted in shipped product** if and only if (1) every asset has substantial hand cleanup with documented process, (2) Steam disclosure is accurate and prominent, and (3) a public "How this art was made" statement is maintained. Cleanup discipline is what determines quality.
+- **AI-generated music is OFF-LIMITS in shipped product.** Royalty-free curation + one ~$300 commissioned signature theme is the path.
+- **AI-generated voice is OFF-LIMITS in shipped product.** Narration is text-only forever.
+- **AI for prototyping** (Midjourney, Suno, ElevenLabs) is fine internally — never shipped.
+
+When the user asks for asset work:
+- Prototypes / dev builds / mood boards: AI generation is fine, no cleanup required.
+- Demo or launch builds: art must go through the full cleanup workflow per `VIBE_CODING.md`. Do not commit raw AI generations as final shipped assets. Music and voice paths are bounded by the rules above (royalty-free + commissioned theme; text-only narration).
 
 ## Proactively offering tools and connections
 
