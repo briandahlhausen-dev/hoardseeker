@@ -6,6 +6,20 @@
 
 ---
 
+## 2026-05-09 — Dispatch / mobile push setup is partial [LOW]
+
+**Where**: User-side configuration on the local machine being handed off FROM (and pending on whatever new machine takes over).
+
+**What's wrong**: User installed the Claude mobile app and signed in, then tried `/config` to enable "Push when Claude decides" but got "/config isn't available in this environment" — they're not in the CLI variant. The right path is **Dispatch** (Claude Desktop → Cowork → Dispatch in left sidebar → Get started → enable computer-wake → finish setup), but the user pivoted to handing off to a different machine before completing it. Result: `PushNotification` calls still report "Mobile push not sent (Remote Control inactive)" — the user gets desktop notifications but not phone notifications.
+
+**Why we deferred the fix**: Machine handoff happened mid-setup. The new machine will need its own Dispatch (or Remote Control) configuration anyway, so finishing the setup on the old machine would have been wasted effort.
+
+**Cost of not fixing**: Lower-quality experience during long autonomous Claude work — the user has to actively check progress instead of getting pinged on phone. Not a project-blocker; the project ships fine without phone notifications.
+
+**Suggested fix when revisited**: On the new machine, install Claude Desktop (claude.com/download), navigate Cowork → Dispatch → Get started → enable computer wake → finish setup. Test with a `PushNotification` call from Claude — phone should buzz. Once working, the existing autonomous-work pattern gets phone-based observability.
+
+---
+
 ## 2026-05-08 — Local tests require `godot --headless --import` on fresh checkout [LOW]
 
 **Where**: `hoardseeker/` test workflow.
