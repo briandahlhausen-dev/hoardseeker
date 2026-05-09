@@ -21,13 +21,16 @@
 
 1. **`VIBE_CODING.md`** — **READ FIRST.** The user is non-technical. This file defines how we work together: discipline rules, audit cadence, modularity enforcement, what irreversible actions require confirmation. Violating these rules causes project failure.
 2. **`RESILIENCE.md`** — **READ SECOND.** Burnout and project abandonment are the dominant failure modes for solo devs. This file defines the systems that prevent them. Pay special attention to the early warning signs and the crisis protocol — recognizing them in the user's messages is part of your job.
-3. **`VISION.md`** — what we're building and why. The north star.
-4. **`ARCHITECTURE.md`** — how the code is structured. **Read this before writing any code.** Especially the determinism, command pattern, and event sourcing sections.
-5. **`VERTICAL_SLICE.md`** — what we're building *first*. Months 1-4 scope. This is your active work plan.
-6. **`FULL_VISION.md`** — the complete design (everything we'll eventually build). Reference for context, not a checklist.
-7. **`CONTENT.md`** — classes, races, subclasses, abilities, artifacts, monsters. Data-driven content lives here.
-8. **`MULTIPLAYER.md`** — duo mode design, networking architecture, ranked system. Not implemented in vertical slice.
-9. **`ROADMAP.md`** — phased plan from prototype to launch.
+3. **`SESSION_PROTOCOL.md`** — **READ THIRD.** The discipline that keeps long-term memory of decisions intact across an 18-22 month project. Defines the session-start, mid-session, and session-end rituals plus the document hierarchy. The "Currently in flight" section at the bottom of this file (CLAUDE.md) is where the cross-session pickup state lives.
+4. **`DECISIONS.md`** — read the most recent entries and the "Open questions" section. This is the canonical decision log. Anything we decided lives here.
+5. **`VISION.md`** — what we're building and why. The north star.
+6. **`ARCHITECTURE.md`** — how the code is structured. **Read this before writing any code.** Especially the determinism, command pattern, and event sourcing sections.
+7. **`VERTICAL_SLICE.md`** — what we're building *first*. Months 1-4 scope. This is your active work plan.
+8. **`FULL_VISION.md`** — the complete design (everything we'll eventually build). Reference for context, not a checklist.
+9. **`CONTENT.md`** — classes, races, subclasses, abilities, artifacts, monsters. Data-driven content lives here.
+10. **`MULTIPLAYER.md`** — duo mode design, networking architecture, ranked system. Not implemented in vertical slice.
+11. **`ROADMAP.md`** — phased plan from prototype to launch.
+12. **`RECAPS.md`, `IDEAS.md`, `TECH_DEBT.md`** (if they exist) — recent week's recap, deferred ideas, known issues. Created lazily when first needed; templates in `SESSION_PROTOCOL.md`.
 
 ## Hard rules — never violate these
 
@@ -55,21 +58,33 @@ These are architectural constants. Breaking them creates massive rework debt lat
 
 ## When you start a session
 
-1. Read `VIBE_CODING.md` first, then `CLAUDE.md`, `VISION.md`, `ARCHITECTURE.md`, and `VERTICAL_SLICE.md`.
-2. Check `ROADMAP.md` for current phase.
-3. Confirm what we're working on with the user before writing code. **Always propose the plan in plain English first. Wait for approval.**
-4. Work on a branch, never on `main`.
-5. Run existing tests (`godot --headless --script test_runner.gd`) before changes.
-6. After substantial changes, run the test suite again. Don't ship if anything fails.
-7. Before any irreversible action (file deletion, force push, branch reset, paid recording session, Steam build submission), pause and confirm with the user.
+The full session-start ritual is in `SESSION_PROTOCOL.md`. Summary:
+
+1. Read `VIBE_CODING.md`, `RESILIENCE.md`, `SESSION_PROTOCOL.md`, then this file.
+2. Read recent entries + open questions in `DECISIONS.md`.
+3. `git log --oneline -20` to see what was last worked on.
+4. Read the "Currently in flight" section at the bottom of this file — that's the cross-session pickup state.
+5. Read the most recent entry in `RECAPS.md` if it exists.
+6. Skim `TECH_DEBT.md` for anything BLOCKER or HIGH if it exists.
+7. Check `ROADMAP.md` for current phase.
+8. **State your understanding of current project state to the user and confirm what we're tackling today.** Catches drift between actual state and your read of it.
+9. Confirm what we're working on with the user before writing code. **Always propose the plan in plain English first. Wait for approval.**
+10. Work on a branch, never on `main`.
+11. Run existing tests (`godot --headless --script test_runner.gd`) before changes.
+12. After substantial changes, run the test suite again. Don't ship if anything fails.
+13. Before any irreversible action (file deletion, force push, branch reset, paid recording session, Steam build submission), pause and confirm with the user.
 
 ## When you finish a session
 
-1. Update relevant docs if the design changed.
-2. Note unresolved decisions or new tech debt in `DECISIONS.md` and `TECH_DEBT.md` (create the latter when first needed).
+Full ritual is in `SESSION_PROTOCOL.md`. Summary:
+
+1. Confirm new decisions are in `DECISIONS.md` (not just promised — actually written down).
+2. Confirm new ideas in `IDEAS.md` and new tech debt in `TECH_DEBT.md` (create either when first needed; templates in `SESSION_PROTOCOL.md`).
 3. Commit with a message that explains the *intent*, not just the diff.
-4. Push to the branch. Confirm with the user before merging to `main`.
+4. Push to the branch. **Confirm with the user before merging to `main`.**
 5. Run a quick modularity check: did the change touch only the system it should have? If it spread, flag it.
+6. **Update the "Currently in flight" section at the bottom of this file.** Empty it if nothing's in flight; otherwise leave the next session a clean handoff.
+7. If end-of-week, append a 5-line entry to `RECAPS.md`.
 
 ## What we are NOT building
 
@@ -112,3 +127,20 @@ When the user asks for asset work:
 ## Proactively offering tools and connections
 
 The user is non-technical and may not know what tools or services exist. When you encounter a need that has a known tool/service solution (asset pipelines, version control improvements, MCP integrations, automation), proactively mention it — but defer to the user's decision and budget. Never auto-subscribe to anything or assume a tool is available.
+
+---
+
+## Currently in flight
+
+> Updated at end of every session. Empty if nothing in flight. Read first thing on session start.
+
+**Last updated**: 2026-05-08 (end of bootstrap-realignment session)
+
+- **What we were working on**: Bootstrap budget realignment — pivoted the project from contractor-driven production (~$10-50k assumed) to bootstrap mode (<$5k total). Updated 10 design docs to reflect new production model, scope, and AI-content rule.
+- **Where we paused**: All bootstrap-realignment changes merged to `main`. `SESSION_PROTOCOL.md` added on its own branch as a separate alignment fix (likely merged by the time you read this).
+- **What needs to happen first when we resume**: Confirm the user's next priority. Plausible candidates (per the bootstrap-realignment session wrap-up):
+  1. **Phase 0 setup** — scaffold the Godot project skeleton in `hoardseeker/` per `ARCHITECTURE.md` (folders, `.tres` base classes, test runner).
+  2. **Style guide locking** — start AI generation experiments to lock 3-5 north-star reference pieces and write `assets/STYLE_GUIDE.md`.
+  3. **Tooling check** — verify Godot 4 install, decide on code editor (VS Code likely), confirm GitHub remote setup.
+- **Any blockers**: None. User is ready to pick up wherever they want.
+- **Branch / files involved**: `main` is current. Branch `bootstrap-realignment` is merged and deleted. `SESSION_PROTOCOL.md` was added on `add-session-protocol` branch.
