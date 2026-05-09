@@ -1,0 +1,31 @@
+Hoardseeker — All Rights Reserved
+
+Copyright (c) 2026 Brian Dahlhausen
+
+This repository contains the proprietary source code, art, design documents,
+audio assets, and other intellectual property of Hoardseeker, a commercial
+game in development.
+
+All rights are reserved. No part of this repository — in whole or in part —
+may be copied, modified, distributed, sublicensed, sold, or used in any way
+without the express written permission of the copyright holder.
+
+If you have received access to this repository, you have done so under
+specific terms agreed with the copyright holder. Use beyond those terms is
+not permitted.
+
+This project is a work in progress. Its contents — including design,
+mechanics, art direction, and scope — are subject to change without notice.
+
+Third-party content used in development (royalty-free music tracks, CC0
+sound effects, AI-generated assets prior to cleanup, open-source software
+dependencies) is governed by its own respective licenses, which are tracked
+separately in:
+
+  audio/MUSIC_LICENSES.md   — per-track music license + attribution
+  audio/SFX_LICENSES.md     — per-file SFX license + attribution
+  hoardseeker/THIRD_PARTY.md — code dependency licenses (Godot, GodotSteam, etc.)
+
+These tracking files will be created as content is added. The all-rights-
+reserved status of original Hoardseeker IP is unaffected by the inclusion
+of third-party content under their respective licenses.
