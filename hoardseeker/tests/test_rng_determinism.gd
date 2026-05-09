@@ -26,6 +26,8 @@ func run_tests() -> Array[String]:
 	failures.append_array(_test_chance_distribution_basic())
 	failures.append_array(_test_pick_handles_empty())
 	failures.append_array(_test_pick_returns_array_member())
+	failures.append_array(_test_duplicate_preserves_stream())
+	failures.append_array(_test_duplicate_then_continue_matches_original())
 
 	return failures
 
@@ -154,4 +156,55 @@ func _test_pick_returns_array_member() -> Array[String]:
 		var result = rng.pick(arr)
 		if not (result in arr):
 			return ["pick_returns_array_member: pick returned %s which is not in %s" % [str(result), str(arr)]]
+	return []
+
+
+# Resource.duplicate(true) must produce a USABLE RNGService — the internal
+# `_rng` field is not @export'd (it's a non-serializable RandomNumberGenerator
+# instance), so a naive duplicate would leave it null and the next call
+# would crash. RNGService rehydrates _rng lazily via _ensure_rng().
+#
+# This test is the regression net for that contract. EventLog.replay()
+# depends on it: replay duplicates the initial GameState, which duplicates
+# the RNGService inside it.
+func _test_duplicate_preserves_stream() -> Array[String]:
+	var original := RNGService.new(42)
+	original.roll(20)  # advance to stream_position 1
+	original.roll(20)  # advance to stream_position 2
+	original.chance(0.5)  # advance to stream_position 3
+
+	var copy: RNGService = original.duplicate(true)
+	var failures: Array[String] = []
+	if copy.seed != 42:
+		failures.append("duplicate_preserves_stream: copy.seed should be 42, got %d" % copy.seed)
+	if copy.stream_position != 3:
+		failures.append("duplicate_preserves_stream: copy.stream_position should be 3, got %d" % copy.stream_position)
+
+	# The next call must not crash. If _ensure_rng() is broken, this
+	# raises a null-method error and the test runner shows the stack.
+	var next_roll: int = copy.roll(20)
+	if next_roll < 1 or next_roll > 20:
+		failures.append("duplicate_preserves_stream: post-duplicate roll out of range: %d" % next_roll)
+	return failures
+
+
+# Stronger: a duplicated RNGService at position N should produce the
+# SAME subsequent rolls as the original would have if it kept rolling.
+# This is the property EventLog.replay relies on for deterministic
+# state reconstruction.
+func _test_duplicate_then_continue_matches_original() -> Array[String]:
+	var a := RNGService.new(7)
+	# Burn 5 calls
+	for i in 5:
+		a.roll(20)
+
+	# Duplicate at position 5
+	var b: RNGService = a.duplicate(true)
+
+	# Continue both for 20 more calls; the streams must match exactly
+	for i in 20:
+		var ra := a.roll(20)
+		var rb := b.roll(20)
+		if ra != rb:
+			return ["duplicate_then_continue: stream diverged at offset %d (original=%d, copy=%d)" % [i, ra, rb]]
 	return []
