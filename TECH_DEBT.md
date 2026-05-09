@@ -6,14 +6,16 @@
 
 ---
 
-## 2026-05-08 — Godot wrapper hardcodes path to Downloads folder [LOW]
+## 2026-05-08 — Godot wrapper has two fragility points [LOW]
 
 **Where**: `C:\Users\brian\bin\godot` (bash wrapper) and `C:\Users\brian\bin\godot.bat` (cmd wrapper).
 
-**What's wrong**: Both wrappers reference `C:\Users\brian\Downloads\Godot_v4.6.2-stable_win64.exe\Godot_v4.6.2-stable_win64.exe` — the original download location. If the user moves the Godot folder out of Downloads (e.g., during routine cleanup) or updates Godot to a newer version, the wrappers will silently break: `godot --version` fails with "file not found."
+**What's wrong**:
+1. **Hardcoded path**: Both wrappers reference `C:\Users\brian\Downloads\Godot_v4.6.2-stable_win64.exe\Godot_v4.6.2-stable_win64_console.exe` — the original download location. If the user moves the Godot folder out of Downloads (e.g., during routine cleanup) or updates Godot to a newer version, the wrappers will silently break: `godot --version` fails with "file not found."
+2. **Must use the `_console.exe` variant, not the GUI `.exe`**: The wrappers were initially set to point at the GUI exe (`Godot_v4.6.2-stable_win64.exe`). When run from Git Bash with `--headless --script`, the GUI version produced no stdout output (process hung silently while running). The console subsystem variant (`Godot_v4.6.2-stable_win64_console.exe`) is required for any test/CI usage. If a future "cleanup" reverts to the GUI exe, all headless tests will silently hang again. **Update**: This was caught and fixed during the first test-runner integration on 2026-05-08.
 
-**Why we deferred the fix**: Tooling-check session prioritized getting `godot` invokable as a command. The wrapper works today; cleanup of the install location is a separate concern.
+**Why we deferred the fix**: Tooling-check session prioritized getting `godot` invokable as a command. The wrapper works today; cleanup of the install location and a more robust resolver is a separate concern.
 
-**Cost of not fixing**: Minor user friction. If the wrapper breaks, the failure is loud and easy to diagnose. Worst case: 10 minutes to re-edit the path or move the install. Not launch-blocking.
+**Cost of not fixing**: Minor user friction. If point 1 breaks, the failure is loud and easy to diagnose. If point 2 regresses, the failure is silent — tests hang with no output. Not launch-blocking but the silent-hang case is the bigger trap.
 
-**Suggested fix when revisited**: Move Godot install to a stable location (e.g., `C:\Users\brian\bin\Godot\` or `C:\Tools\Godot\`), update wrappers to point there. Or add a small `which`-style fallback that checks multiple known locations. Or use a `GODOT_PATH` env var read by the wrappers.
+**Suggested fix when revisited**: Move Godot install to a stable location (e.g., `C:\Users\brian\bin\Godot\` or `C:\Tools\Godot\`), update wrappers to point there. Add a `GODOT_PATH` env var read by the wrappers as a fallback. Always use the `_console.exe` variant in the wrapper — never the GUI exe — and add a comment in the wrapper explaining why.
