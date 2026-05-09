@@ -302,9 +302,11 @@ The pre-committed triggers for Hoardseeker:
 | Condition | Trigger | Response |
 |---|---|---|
 | Vertical slice combat doesn't feel fun by month 5 | 3 separate playtesters say it's "okay, not great" | Iterate on combat for 1 more month before adding scope. After 2 months, replan or downsize. |
-| Wishlist count below 5,000 by Steam Next Fest | <5k wishlists by demo launch | Reassess marketing strategy with publisher or community feedback. Don't quit; redirect. |
-| Solo + duo both shipping at month 18 looks impossible | Multiplayer architecture not stable at month 14 | Ship solo at month 18, duo as free 1.0 update by month 22. |
-| Funds running low | <3 months of contractor budget remaining | Stop new contractor work, ship with current art. Defer audio polish. |
+| Wishlist count below 5,000 by Steam Next Fest | <5k wishlists by demo launch | Reassess marketing strategy with community feedback. Don't quit; redirect to free channels (TikTok devlog, streamer outreach, devblog cadence). |
+| Solo + duo both shipping at month 18-20 looks impossible | Multiplayer architecture not stable at month 14-15 | Ship solo at month 18-20, duo as free 1.0 update by month 22-24. |
+| **Bootstrap budget breach** | <$500 of $5k bootstrap budget remaining at month 12, OR projected to breach by month 16 | Cut scope, not raise budget. Likely targets: drop one launch class to post-launch, drop the commissioned signature theme (use royalty-free for title too), defer LLC formation if not yet done. |
+| Druid or Ranger subsystem proves intractable | Either class not playable end-to-end by month 10 | Pull the affected class to post-launch immediately. Do not absorb timeline cost. Launch with 11 (or 10) classes; ship the cut class as the year-1 update cadence. |
+| AI-content review-bomb on demo | >25% of demo reviews mention AI art as a primary negative within 14 days of demo launch | Review cleanup discipline. Consider re-cleaning the most-criticized assets. Do NOT remove the disclosure; transparency is the long-term play. |
 | Personal health declining | 3+ crisis warning signs in 30 days | Stop work for at least 1 week. Get help. Reassess if continuing is healthy. |
 | Total time exceeds 24 months from project start | Month 24 hit | Force-ship whatever exists. Truncate scope. The game must launch. |
 
