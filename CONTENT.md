@@ -334,22 +334,39 @@ Forgotten Crypt biome only. Full catalog in `data/monsters/`.
 
 ---
 
-## Authoring rate
+## Authoring rate (bootstrap mode, Claude-assisted)
 
-For planning purposes:
+The original rates in this section assumed human-dev hours per asset. With Claude doing the data authoring + boilerplate code and the user handling design review, art cleanup, and balance playtesting, the constraint shifts. The bottlenecks are no longer raw authoring hours — they're:
 
-- **A new ability**: ~2 hours to author (data + icon + balancing).
-- **A new artifact**: ~2 hours.
-- **A new monster**: ~6 hours (data + portrait + AI behavior + animations).
-- **A new class**: ~80 hours (full kit, 3 subclasses, integration testing).
-- **A new biome**: ~120 hours (data + monsters + boss + art + music + narration).
+1. **User's design-review and approval bandwidth** (every system needs your sign-off)
+2. **Art cleanup hours** (every shipped asset needs hand-touch in Krita)
+3. **Playtest cycles** (balance and feel can't be compressed by AI)
+4. **New-subsystem engineering** (Druid Wild Shape, Ranger pet companion)
 
-Solo dev + AI assistance puts the content total at roughly:
-- 12 classes × 80h = 960h (~6 months full-time)
-- 4 biomes × 120h = 480h (~3 months full-time)
-- Artifacts/monsters/abilities filling = ~3-4 months full-time
+### Per-asset authoring time (Claude-assisted)
 
-This is why the launch timeline is 16-22 months. Content is the load.
+| Asset | Claude authoring time | User cleanup/review time |
+|---|---|---|
+| **Ability `.tres`** | ~5 minutes | ~30 minutes (icon cleanup, balance read-through) |
+| **Artifact `.tres`** | ~5 minutes | ~30 minutes (icon cleanup) |
+| **Monster `.tres`** | ~15 minutes | ~1-2 hours (portrait cleanup, AI behavior playtest) |
+| **Simple class** (Fighter-pattern) | ~3-5 days elapsed | spread over the same window for review/playtest |
+| **Medium class** (Wizard, Cleric, Rogue, Paladin) | ~5-10 days elapsed | review/playtest across the same window |
+| **Hard class** (Sorcerer, Bard, Monk, Warlock) | ~10-15 days elapsed | review/playtest across the same window |
+| **Subsystem class** (Druid Wild Shape, Ranger pet) | ~15-25 days elapsed | architecture iteration heavier |
+| **Biome** | ~3-5 weeks elapsed (data + ~15 monsters + boss + art cleanup + balance) | ongoing review |
+
+### Total launch content (12 classes, 2 biomes)
+
+Rough budget for the full launch:
+- All 12 classes built: ~4-6 months elapsed (parallel-developable in places)
+- 2 biomes fully built: ~6-10 weeks elapsed
+- ~80 artifacts: ~40 hours of art cleanup, Claude authoring is fast
+- ~30 launch-biome monsters + 2 bosses: ~60 hours of art cleanup
+- ~250 ability icons: ~60-100 hours of cleanup
+- Ongoing balance + polish through the back half of the project
+
+This is why the launch timeline is **18-20 months** under bootstrap mode (slightly longer than the original 16-18 month target to absorb Druid + Ranger subsystem work). Content is the load — but with Claude authoring, *playtesting* and *art cleanup* are the larger bottlenecks than raw data entry.
 
 ---
 
@@ -357,7 +374,7 @@ This is why the launch timeline is 16-22 months. Content is the load.
 
 - **All player-facing strings** go through a string table (`tr("ability_fighter_slash_name")`).
 - **No hardcoded English** in `.tres` files for display text. Use string IDs.
-- **Narration IDs** map to recorded lines. Subtitle text accompanies every line.
+- **Narration text** maps to string IDs in the parchment-overlay system. No recorded lines (narration is text-only forever per `DECISIONS.md`).
 - **Cultural review pass** before localization commits — some D&D fantasy concepts don't translate cleanly.
 
-Launch in English. Major languages (German, French, Spanish, Portuguese-BR, Russian, Simplified Chinese, Japanese, Korean) within 6 months post-launch.
+Launch in English under bootstrap mode. Major languages (German, French, Spanish, Portuguese-BR, Russian, Simplified Chinese, Japanese, Korean) deferred to year 2 post-launch, **contingent on revenue** funding professional translation. Localization service ($5-15k for 7-8 languages) is outside the bootstrap budget; community-translated patches may bridge the gap if active translator volunteers emerge.
