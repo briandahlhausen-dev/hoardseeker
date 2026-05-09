@@ -7,21 +7,27 @@
 
 ## The launch product
 
-**Hoardseeker 1.0** ships with:
+**Hoardseeker 1.0** ships under bootstrap-mode production (<$5k total project budget). The launch is intentionally tight; biomes 3-4 ship as free post-launch updates over year 1-2.
 
-- **12 classes**, each fully voiced in mechanical identity
+- **12 classes**, each mechanically distinct (full roster, no cuts)
 - **3 subclass options per class** (36 total)
 - **~250 abilities** across all classes
-- **4 themed biomes**, each with 10-15 floors and a unique boss
+- **2 themed biomes at launch**: The Forgotten Crypt (floors 1-10) + The Sunken Halls (floors 11-20). Each with a unique boss.
 - **~80 artifacts** that meaningfully change builds
-- **~60 monster types** across the four biomes, plus 4 bosses
+- **~30 monster types** across the two launch biomes, plus 2 bosses (Lich King, Drowned Empress)
 - **Solo mode + Duo mode**, both fully featured at launch
 - **Ranked seasonal ladders**: separate solo + duo, composite ELO, 2-3 month seasons
 - **Daily seed runs**: solo and duo, separate leaderboards
-- **Sparse DM narration** by a single voice actor across ~200 narration moments
-- **Original orchestral soundtrack**, ~90 minutes
+- **Sparse text-only DM narration** at ~80-100 trigger moments (parchment overlay, no voice acting)
+- **Curated soundtrack**: royalty-free orchestral (Kevin MacLeod, FreePD, Pixabay Music, Tabletop Audio) + one commissioned signature theme for title/boss
 - **Full save/load**, including mid-run cloud saves on Steam
 - **English at launch**, with localization-ready architecture for major languages in year 2
+
+**Free post-launch content drops** (year 1-2):
+- **Biome 3**: The Ember Reach (floors 21-30) + The Forgemaster boss
+- **Biome 4**: The Astral Vault (floors 31-40) + The Architect boss
+- Additional artifacts, monsters, narration moments, and balance updates per drop
+- Possibly: seasonal class-spotlight events, crossover cosmetics, new game modes
 
 ---
 
@@ -101,32 +107,46 @@ These synergies are intentional. They give per-race "best build" guides that str
 
 Race is an expressive layer on top of class, not a parallel content gate.
 
-### Race art at launch
+### Race art at launch (revised for bootstrap mode)
 
-Each race gets a distinct portrait variant for each class — but we do this in tiers:
+Under bootstrap-mode production (AI gen + hand cleanup, no contracted illustrator), the original 216-portrait plan isn't feasible. The current approach uses **shared base portraits per class** with **race differentiation via color palette swaps + small accessory/silhouette tweaks**, not unique illustrations per race × class.
 
-- **Slice**: Human only. 3 portrait variants for the Fighter.
-- **Demo**: Human + 2 others (likely Dwarf + Half-Orc — most visually distinct). 3 portraits each, Fighter + Wizard.
-- **Launch**: 6 races × 12 classes × 3 variants = **216 portraits**. This is the largest single art ask. Plan illustrator capacity around this.
+- **Slice**: Human only. 3 portrait variants for the Fighter (the only slice class).
+- **Demo**: Human + 2 others (Dwarf + Half-Orc — most visually distinct via accessories/silhouette). Fighter + Wizard with palette/accessory variants.
+- **Launch**: 12 base class portraits + 6 race color palettes / accessory layers = ~36-48 portrait variants total (versus the original 216 plan).
 
-If illustrator capacity falls short, contingency: ship launch with race color/silhouette differentiation only, deliver full per-race portraits as a free post-launch update.
+Race differentiation reads through:
+- Color palette overlays (skin tone, hair color)
+- Accessory swaps (Dwarf braid beads, Tiefling horns, Halfling smaller frame, Half-Orc tusks)
+- Subtle silhouette tweaks (size class for Halflings, posture cues)
+
+Per-race fully unique portraits become a possible **post-launch art polish pass** if revenue allows it. This is a deliberate trade: launch quality over launch quantity. Players still see meaningfully distinct races; we just don't illustrate every combination from scratch.
 
 ---
 
-## The 4 biomes
+## Biomes — 2 at launch, 2 in post-launch updates
 
-Each biome has a distinct visual identity, monster roster, and boss. Players don't choose — biomes are sequenced 1-2-3-4 across a run, each with its own boss gauntlet.
+Each biome has a distinct visual identity, monster roster, and boss. Each *run* takes you through biomes via a branching map, with biome bosses gating progression. Like Hades' chambers structure but with branching choices within each biome.
 
-Wait — design correction. Let's revisit. We said the dungeon is **branching map across multiple themed biomes**. So each *run* takes you through multiple biomes via a branching map, with biome bosses gating progression. Like Hades' chambers structure but with branching choices within each biome.
+### Launch biomes (2)
 
 | Biome | Floors | Theme | Monster archetypes | Boss |
 |---|---|---|---|---|
 | **The Forgotten Crypt** | 1-10 | Undead, dark stone, candlelight | Skeletons, zombies, ghouls, wraiths | The Lich King |
 | **The Sunken Halls** | 11-20 | Flooded ruins, blue-green light, kelp | Sahuagin, drowned ones, sea hags, krakenkin | The Drowned Empress |
-| **The Ember Reach** | 21-30 | Lava caves, dwarven forges | Fire elementals, dwarven undead, salamanders, devils | The Forgemaster |
-| **The Astral Vault** | 31-40 | Floating platforms, starfields, geometry | Astral constructs, illithids, beholders, githyanki | The Architect |
 
-A "complete run" goes through all four biomes. Most players die in the Crypt or Halls early on. Reaching the Architect is the late-game brag.
+A "complete run" at launch goes through both biomes — ~70 minutes for a full successful run, well within roguelike norms. Most players die in the Crypt early on. Reaching the Drowned Empress is the late-game brag at launch.
+
+### Post-launch biomes (free content updates, year 1-2)
+
+| Biome | Floors | Theme | Monster archetypes | Boss | Target ship |
+|---|---|---|---|---|---|
+| **The Ember Reach** | 21-30 | Lava caves, dwarven forges | Fire elementals, dwarven undead, salamanders, devils | The Forgemaster | Year 1 |
+| **The Astral Vault** | 31-40 | Floating platforms, starfields, geometry | Astral constructs, illithids, beholders, githyanki | The Architect | Year 1-2 |
+
+These ship as free updates and become the major Year 1 content cadence. Each adds 10 floors, ~15 monsters, 1 boss, biome-specific artifacts, and additional narration moments. Reaching the Architect post-launch becomes the eventual late-game brag.
+
+**Why this split**: under bootstrap mode, shipping 2 biomes at launch keeps the art and balance load tractable for a solo developer using AI generation + hand cleanup. Biomes 3-4 are the most visually expensive (Ember Reach's lava lighting, Astral Vault's geometric otherworldliness), making them the right candidates to defer until launch revenue / production rhythm is established.
 
 ---
 
@@ -256,52 +276,69 @@ Minimal NPCs. A guild master who greets you on the title screen. A merchant who 
 
 ### Narration system
 
-A single voice actor. ~200 narration cues across the launch product. Triggers:
+**All narration is text-only.** No voice acting in shipped product, ever (including post-launch updates). The DM speaks through stylized parchment overlays at trigger moments, with subtle SFX (parchment unfurl, ink scratch, brief musical sting) carrying the atmospheric weight a voice would otherwise.
+
+~80-100 narration cues across the launch product (reduced from original 200 because text writing is faster than VO production). Triggers:
 
 - **Run start** (varies by class): "*The Wizard descends, spells crackling at her fingertips.*"
 - **First crit of a run**: "*A perfect strike.*"
-- **Boss intros** (one per boss, ~30-60 seconds each)
+- **Boss intros** (one per boss, ~50-100 words each)
 - **Death** (varies by death type)
 - **First-time mythic artifact pickup** (per artifact)
 - **Comeback save** (revived from <5 HP)
 - **Long combo chains** (3+ crits in a row)
 
-The narrator is sparse, dry, occasionally cruel. Bastion / Hades / classic D&D DM tonally.
+Tone: sparse, dry, occasionally cruel. Bastion / Hades / classic D&D DM in feel — but read, not heard. Slay the Spire is the precedent: text-only narrative content, players love it.
 
 ### What we don't do
 
+- Voice acting of any kind in shipped product (text only, forever)
 - Long cutscenes
-- Fully voiced character dialogue (everything else is text)
+- Fully voiced character dialogue
 - Branching narrative
-- Player-name acknowledgement (the narrator never says your character's name — keeps recordings cheap)
+- Player-name acknowledgement
 
 ---
 
 ## Audio direction
 
-- **Music**: original orchestral score, ~90 minutes total. One main theme, biome themes, boss themes, menu theme, victory theme, death theme.
-- **Composer**: contracted; not the solo dev. Music is one of the few things to outsource.
-- **SFX**: dice rolls (the centerpiece — multiple variations), sword hits, magic crackles, monster vocals, parchment rustles, gold clinks. ~150 SFX total.
-- **Mix**: audio is loud and present. Crits hit hard. The dice are loud. Music ducks for narration.
+- **Music** — curated royalty-free orchestral with one commissioned signature theme:
+  - Primary library curated from Kevin MacLeod (incompetech.com), FreePD (CC0), Pixabay Music, Tabletop Audio commercial-licensed tracks.
+  - One signature theme commissioned (~$300, music school student or AirGigs lower tier) for title screen / boss intro.
+  - Per-track licenses tracked in `audio/MUSIC_LICENSES.md`. Attribution provided in credits where required.
+  - AI-generated music is not used in shipped product (per the revised AI-content rule).
+- **SFX** — Freesound CC0 + custom dice recording:
+  - Dice rolls (the centerpiece — multiple variations, custom recorded with phone + Audacity, $0).
+  - Sword hits, magic crackles, monster vocals, parchment rustles, gold clinks. ~150 SFX total, sourced from Freesound.org (CC0 only, license-verified per file in `audio/SFX_LICENSES.md`).
+- **Mix**: audio is loud and present. Crits hit hard. The dice are loud. Music ducks for narration overlays.
+- **Total audio budget**: ~$300-400 (one commissioned theme + buffer). The commissioned theme is the only paid audio asset.
 
 ---
 
 ## Visual direction
 
-- **2D painted realism.** Think Magic: the Gathering art, Heroes of Might and Magic 3 portraits, painted Slay the Spire characters. Not pixel art. Not cartoon.
-- **Single illustrator** as primary contributor. AI-assisted concept generation acceptable, hand-cleaned for final art.
-- **Asset count**: ~150 character/monster portraits, ~80 artifact icons, ~250 ability icons, ~20 environment backgrounds (one per biome × room types), full UI set.
-- **Animations**: Spine 2D or simple skeletal animation for combat actions. Non-naturalistic — deliberate, weighty, like a card game with movement.
+- **Stylized 2D illustration with sourcebook tone.** Pen-and-ink linework, parchment textures, restrained painted shading. Inscryption-adjacent in tonal weight, but warmer and more D&D-flavored. Not painted realism. Not pixel art. Not cartoon.
+- **Production model**: AI generation (Midjourney or local Stable Diffusion) + mandatory hand cleanup in Krita / Photopea. Every shipped asset gets hand-touched. The cleanup is what determines final quality, not the prompt. See `VIBE_CODING.md` for the full workflow + revised AI-content rule.
+- **Asset count at launch** (substantially reduced from original spec via the 2-biome cut + race differentiation via palette/accessory swaps):
+  - ~36 character portraits (12 classes × shared base + race color/accessory variants — not unique per race × class)
+  - ~30 monster portraits (2 launch biomes only)
+  - ~80 artifact icons
+  - ~250 ability icons
+  - ~10 environment backgrounds (2 biomes × 5 room types)
+  - Full UI set (parchment-and-ink theme)
+- **Cleanup workload**: ~275 hours total across the project, spread over 18-20 months at ~15 hrs/month. Inside the 40-hour weekly cap with margin.
+- **Animations**: Simple skeletal animation or sprite swaps for combat actions. Deliberate, weighty, like a card game with movement. No fully animated characters at launch.
 - **UI**: Parchment-and-ink. Ornate frames. Calligraphic fonts for headers, readable serif for body text. Wax seals as buttons. Hand-drawn flourishes.
+- **AI disclosure**: Steam store page discloses AI-generated content per Steam's required field. Public "How this art was made" statement on the project website / Discord. Transparency is part of the deal, not a fallback.
 
 ---
 
 ## Monetization
 
-- **Premium**: $19.99 base price at launch.
+- **Premium**: $14.99-19.99 base price at launch (final pricing decided ~month 14 based on demo reception and bootstrap-tier production reality; lower end is more likely).
 - **No microtransactions, no battle pass, no loot boxes.** Period.
-- **Cosmetic DLC** acceptable in year 2 if production is sustainable. Class skin packs, narrator voice packs, biome retextures. Cosmetic only — never gameplay-affecting.
-- **Free content updates**: 2-3 large free updates in year 1 (new class, new biome, new mode). This is the "Friends of Jimbo" pattern from Balatro.
+- **Cosmetic DLC** acceptable in year 2 if production is sustainable. Class skin packs, biome retextures. Cosmetic only — never gameplay-affecting. (Narrator voice packs explicitly excluded — text-only narration is permanent per `DECISIONS.md`.)
+- **Free content updates** in year 1-2: the planned post-launch biome drops (Ember Reach, then Astral Vault) plus modes / events. This is the "Friends of Jimbo" pattern from Balatro.
 
 ---
 
@@ -309,11 +346,12 @@ The narrator is sparse, dry, occasionally cruel. Bastion / Hades / classic D&D D
 
 After launch, sustained engagement comes from:
 
-- **Free content updates** every 3-4 months (new class, new biome, new artifacts, new modes)
-- **Weekly class-spotlight leaderboards** (rotating, automatic)
+- **The planned biome drops**: Ember Reach (year 1) and Astral Vault (year 1-2) are the headline free content updates. Each adds 10 floors, ~15 monsters, 1 boss, biome-specific artifacts, and additional narration moments.
+- **Weekly class-spotlight leaderboards** (rotating across all 12 classes, automatic)
 - **Seasonal ranked resets** (every 10-12 weeks)
 - **Daily seed challenges** (always-on)
-- **Crossover events** with other indie games (Balatro-style — free cosmetics from partner games)
+- **Smaller content drops** between biomes (new artifacts, balance updates, additional mythic items)
+- **Crossover events** with other indie games (Balatro-style — free cosmetics from partner games), if opportunities arise
 - **Community events** (custom seed contests, fan art competitions)
 
-The live ops cadence is the difference between a one-and-done indie hit and a long-tail success.
+The live ops cadence is the difference between a one-and-done indie hit and a long-tail success. Bootstrap-mode launch keeps the year-1 update budget in the $0-300/month range (one composer commission per major drop is the only meaningful expense).
