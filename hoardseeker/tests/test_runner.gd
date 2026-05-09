@@ -49,6 +49,11 @@ func _init() -> void:
 	var end_turn_test: Object = end_turn_script.new()
 	total_failures.append_array(_run("EndTurnCommand", end_turn_test))
 
+	test_count += 1
+	var monster_script: Script = load("res://tests/test_monster_state.gd")
+	var monster_test: Object = monster_script.new()
+	total_failures.append_array(_run("MonsterState", monster_test))
+
 	# --- Summary ---
 	print("================================================================")
 	if total_failures.is_empty():

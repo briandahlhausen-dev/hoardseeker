@@ -19,8 +19,8 @@
 ## Phase 0: GameState exists as a scaffold with the field set defined.
 ## Phase 1: CommandProcessor + first commands actually populate / mutate it.
 ##
-## Knows about: RNGService, PlayerState, DungeonState, EncounterState,
-##              EventLog. All resource types.
+## Knows about: RNGService, PlayerState, MonsterState, DungeonState,
+##              EncounterState, EventLog. All resource types.
 ## Used by: every system in the project, indirectly via the processor.
 
 class_name GameState extends Resource
@@ -64,3 +64,31 @@ func find_player(p_actor_id: String) -> PlayerState:
 		if p.actor_id == p_actor_id:
 			return p
 	return null
+
+
+## Convenience: find the MonsterState with a given actor_id within the
+## current encounter. Returns null if there is no current encounter or no
+## monster in it matches.
+func find_monster(p_actor_id: String) -> MonsterState:
+	if current_encounter == null:
+		return null
+	for m in current_encounter.monsters:
+		if m.actor_id == p_actor_id:
+			return m
+	return null
+
+
+## Convenience: find any actor (player or monster) by actor_id.
+##
+## Returns an untyped Resource because callers that need "either kind"
+## genuinely don't care which concrete type came back — they treat both
+## uniformly via duck-typed access (.hp, .actor_id, etc). Returning a
+## shared base class would force MonsterState and PlayerState to inherit
+## from one, coupling their lifecycle concerns prematurely.
+##
+## Returns null if no actor with that id exists.
+func find_actor(p_actor_id: String) -> Resource:
+	var p: PlayerState = find_player(p_actor_id)
+	if p != null:
+		return p
+	return find_monster(p_actor_id)

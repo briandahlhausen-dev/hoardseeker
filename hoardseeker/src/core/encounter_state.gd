@@ -15,10 +15,10 @@ class_name EncounterState extends Resource
 
 @export var encounter_id: String = ""
 
-## Monsters in this encounter. Each entry is a MonsterState (defined in
-## Phase 1 inside src/systems/combat/). Untyped here to avoid introducing
-## a class that doesn't exist yet.
-@export var monsters: Array = []
+## Monsters in this encounter. MonsterState lives in src/core/ alongside
+## PlayerState — they're treated as siblings, not united under a shared
+## base class.
+@export var monsters: Array[MonsterState] = []
 
 ## Turn order — array of actor_ids (players + monsters) in initiative order.
 ## Rotates as turns complete. Recomputed at the start of each round.
