@@ -6,6 +6,22 @@
 
 ---
 
+## 2026-05-08 — Local tests require `godot --headless --import` on fresh checkout [LOW]
+
+**Where**: `hoardseeker/` test workflow.
+
+**What's wrong**: When the project is freshly checked out (no `.godot/` cache yet), running `godot --headless --script tests/test_runner.gd` produces parse errors like `Could not resolve external class member "players"` for any test that references a `class_name`'d resource with cross-class typed exports (e.g. `Array[PlayerState]` inside `GameState`). The class registry hasn't been built yet, so Godot can't resolve the cross-references at parse time. Tests using only `preload()`-with-no-cross-refs (like `test_rng_determinism.gd`) work fine; tests touching `GameState` or other multi-class structures don't.
+
+**Workaround**: Run `godot --headless --import` once first, before any `--script` invocation. This builds `.godot/global_script_class_cache.cfg` and the registry; subsequent test runs work.
+
+**Why we deferred the fix**: CI handles itself (the workflow already does `--import` before running tests). This only affects local development on a fresh clone, and only for the first run.
+
+**Cost of not fixing**: A future Claude session or fresh contributor running tests on a clean checkout will see confusing parse errors and waste 10-20 minutes diagnosing. Documented here so the answer is one search away.
+
+**Suggested fix when revisited**: Add a `hoardseeker/tests/run.sh` wrapper that does `godot --headless --import || true && godot --headless --script tests/test_runner.gd`. Or have `test_runner.gd` detect when the class cache is missing and print a helpful error pointing at the workaround.
+
+---
+
 ## 2026-05-08 — Godot wrapper has two fragility points [LOW]
 
 **Where**: `C:\Users\brian\bin\godot` (bash wrapper) and `C:\Users\brian\bin\godot.bat` (cmd wrapper).
