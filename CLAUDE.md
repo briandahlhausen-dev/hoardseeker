@@ -134,19 +134,31 @@ The user is non-technical and may not know what tools or services exist. When yo
 
 > Updated at end of every session. Empty if nothing in flight. Read first thing on session start.
 
-**Last updated**: 2026-05-08 (end of session — full week-1 wrap)
+**Last updated**: 2026-05-08 (end of full session — Phase 0 complete)
 
-- **What we were working on**: Project realignment + foundation. Three things in sequence: (1) bootstrap budget realignment across 10 design docs, (2) installed `SESSION_PROTOCOL.md` for cross-session discipline + LICENSE + README, (3) tooling check + GitHub remote setup.
-- **Where we paused**: Clean session end. Everything merged to `main` and pushed to `origin/main` (https://github.com/briandahlhausen-dev/hoardseeker). Working tree clean. Project is now properly tracked, backed up to GitHub + OneDrive, and Godot is invokable as `godot` command.
+- **What we were working on**: Day 1 of the project. Sequenced three milestones: (1) bootstrap budget realignment across 10 design docs, (2) `SESSION_PROTOCOL.md` discipline + `LICENSE` + `README.md`, (3) full Phase 0 (tooling, Godot project scaffold, RNGService + determinism test, CI workflow, GameState + Command base scaffolds + serialization test).
+- **Where we paused**: Clean session end. **Phase 0 is complete.** `main` is at `e4ce246` and pushed to `origin/main` (https://github.com/briandahlhausen-dev/hoardseeker). Working tree clean. 12 merge commits today. CI is running tests on every push. 2 test files, 15 assertions, all green.
+- **Architecture pillars now real, tested code**:
+  - ✅ Determinism (RNGService + 8 assertions)
+  - ✅ Pure data state (GameState + 6 nested resources, all `@export`)
+  - ✅ Command pattern (Command base with validate/apply contract)
+  - ✅ Event sourcing (EventLog with replay() method)
+  - ✅ N-player generality (Array[PlayerState] from day one)
 - **What needs to happen first when we resume**:
-  1. **Phase 0 project scaffold** (recommended, ~2-3 hours focused) — Godot folder structure in `hoardseeker/` per `ARCHITECTURE.md`, base classes (`RNGService`, `GameState`, `Command`), test runner, first determinism test. This is the natural next milestone.
-  2. **LLC formation** (optional, parallel admin task) — Month 1-2 priority per `VIBE_CODING.md`. Low-engagement, can be done alongside coding work.
-  3. **Style guide locking** (premature; defer) — Month 4-6 work per the decision calendar.
-- **Any blockers**: None. Ready to pick up wherever the user wants.
-- **Open admin items** (not blocking, just tracked):
+  1. **Phase 1 — Combat core** (weeks 2-5 per `ROADMAP.md`, the next major chunk). First sub-tasks:
+     - Scaffold first concrete commands: `AttackCommand`, `UseAbilityCommand`, `EndTurnCommand` in `src/systems/combat/`.
+     - Build `CommandProcessor` (validates → applies → logs).
+     - Turn order, action points, HP/AC math.
+     - First ability (`fighter_slash`) + first monster (skeleton) end-to-end.
+     - Headless test: scripted fight resolves deterministically.
+  2. **`gh auth login`** (optional, ~30 sec one-time) — so future sessions can verify CI status without user. Higher leverage than it sounds.
+  3. **LLC formation** (parallel admin task, Month 1-2 priority).
+- **Any blockers**: None.
+- **Open admin items** (tracked, not blocking):
   - LLC formation pending (Month 1-2)
   - Wacom tablet purchase pending (when art cleanup begins, ~Month 4-6)
-  - Hoardseeker - Copy folder on Desktop (legacy, user to decide whether to archive/delete)
+  - `Hoardseeker - Copy` folder on Desktop (legacy, user to decide whether to archive/delete)
   - Pricing decision (~$14.99 vs $19.99) deferred to ~Month 14 per DECISIONS.md
-- **Branch / files involved**: `main` is current and pushed. All session branches merged and deleted. Companion files `RECAPS.md` and `TECH_DEBT.md` now exist. `IDEAS.md` not yet created (no entries yet).
-- **Ritual reminder**: User's `RECAPS.md` entry for 2026-05-08 has the "How I felt" line left blank. They can fill it in any time by telling Claude what to add.
+  - `RECAPS.md` 2026-05-08 entry has the "How I felt" line blank — user can fill in any time
+- **Local dev gotcha** (see `TECH_DEBT.md`): on a fresh checkout, run `godot --headless --import` once before the first test run, otherwise the GameState test will fail with "Could not resolve external class member" parse errors. CI handles this automatically; only matters for local first-runs.
+- **Branch / files involved**: `main` is current and pushed. All session branches merged and deleted. `IDEAS.md` still not yet created (no entries yet).
