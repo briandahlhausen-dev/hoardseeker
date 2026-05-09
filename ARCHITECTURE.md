@@ -21,51 +21,61 @@ If you find yourself wanting to violate one of these, **stop and ask the user.**
 
 ## Project layout
 
+The repository root contains the design docs (`*.md`), the `LICENSE`, the project-level `README.md`, and the `hoardseeker/` Godot project folder. The Godot project is a sibling to the docs, not a parent — this keeps the docs accessible without cd-ing into the game folder.
+
 ```
-hoardseeker/
-├── project.godot
-├── docs/                      # All .md design docs (this directory)
-├── src/
-│   ├── core/                  # Engine-agnostic game logic. NO Godot dependencies here.
-│   │   ├── rng.gd             # RNGService — deterministic random
-│   │   ├── game_state.gd      # GameState resource — pure data
-│   │   ├── command.gd         # Command base class
-│   │   ├── command_processor.gd
-│   │   ├── event_log.gd       # Append-only log of all commands
-│   │   └── simulation.gd      # Headless game runner
-│   ├── content/               # Content as data (.tres resources)
-│   │   ├── classes/           # ClassDef resources
-│   │   ├── subclasses/
-│   │   ├── abilities/
-│   │   ├── artifacts/
-│   │   ├── monsters/
-│   │   └── biomes/
-│   ├── systems/               # Gameplay systems (combat, dungeon, loot, etc.)
-│   │   ├── combat/
-│   │   ├── dungeon/
-│   │   ├── loot/
-│   │   ├── progression/
-│   │   └── meta/
-│   ├── networking/            # Duo mode and leaderboards
-│   │   ├── lobby.gd
-│   │   ├── sync.gd
-│   │   └── leaderboard_client.gd
-│   └── ui/                    # All visual/audio. Reads state, never writes.
-│       ├── screens/
-│       ├── widgets/
-│       ├── combat_view/
-│       └── narrator/
-├── tests/                     # Headless tests
-│   ├── test_runner.gd
-│   ├── test_determinism.gd
-│   ├── test_combat.gd
-│   └── ...
-├── assets/
-│   ├── art/
-│   ├── audio/
-│   └── fonts/
-└── tools/                     # Dev-only scripts (balance dashboards, content editors)
+Hoardseeker/                   # repo root (project.godot is NOT here)
+├── *.md                       # all design docs (CLAUDE.md, VISION.md, etc.)
+├── LICENSE                    # all rights reserved
+├── README.md                  # project overview
+├── .gitignore                 # repo-wide
+└── hoardseeker/               # Godot project root
+    ├── project.godot
+    ├── README.md              # short pointer back to root docs
+    ├── .gitignore             # Godot-specific
+    ├── src/
+    │   ├── core/              # Engine-agnostic game logic. NO Godot dependencies here.
+    │   │   ├── rng.gd         # RNGService — deterministic random
+    │   │   ├── game_state.gd  # GameState resource — pure data
+    │   │   ├── command.gd     # Command base class
+    │   │   ├── command_processor.gd
+    │   │   ├── event_log.gd   # Append-only log of all commands
+    │   │   └── simulation.gd  # Headless game runner
+    │   ├── content/           # Content as data (.tres resources)
+    │   │   ├── classes/       # ClassDef resources
+    │   │   ├── subclasses/
+    │   │   ├── abilities/
+    │   │   ├── artifacts/
+    │   │   ├── monsters/
+    │   │   └── biomes/
+    │   ├── systems/           # Gameplay systems (combat, dungeon, loot, etc.)
+    │   │   ├── combat/
+    │   │   ├── dungeon/
+    │   │   ├── loot/
+    │   │   ├── progression/
+    │   │   └── meta/
+    │   ├── networking/        # Duo mode and leaderboards
+    │   │   ├── lobby.gd
+    │   │   ├── sync.gd
+    │   │   └── leaderboard_client.gd
+    │   └── ui/                # All visual/audio. Reads state, never writes.
+    │       ├── screens/
+    │       ├── widgets/
+    │       ├── combat_view/
+    │       └── narrator/
+    ├── tests/                 # Headless tests
+    │   ├── test_runner.gd
+    │   ├── test_determinism.gd
+    │   ├── test_combat.gd
+    │   └── ...
+    ├── assets/
+    │   ├── art/
+    │   ├── audio/
+    │   └── fonts/
+    └── tools/                 # Dev-only scripts (balance dashboards, content editors)
 ```
+
+**Filenames in `src/core/` etc. are the planned scaffold** — empty placeholder directories with `.gitkeep` files exist now (Phase 0 setup); the actual `.gd` files are scaffolded in Phase 1.
 
 **Critical rule**: `src/core/` has zero dependencies on Godot's scene tree, nodes, or rendering. It's pure GDScript that could theoretically run on a server. This is what makes determinism, headless tests, and server-side replay validation possible.
 

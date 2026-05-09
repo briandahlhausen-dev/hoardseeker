@@ -1,0 +1,19 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="Hoardseeker"
+config/description="A D&D-inspired roguelike deckbuilder. Solo + duo co-op with ranked seasonal ladders. Built in Godot 4 by one solo developer with Claude Code as primary engineer. See ../CLAUDE.md and ../README.md at the project root for orientation."
+config/features=PackedStringArray("4.6")
+
+[rendering]
+
+renderer/rendering_method="forward_plus"
