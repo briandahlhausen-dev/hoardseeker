@@ -63,9 +63,11 @@ func apply(state: Resource) -> Array[GameEvent]:
 			round_num = state.current_encounter.round_number
 		events.append(GameEvent.new("ROUND_STARTED", {"round": round_num}))
 
-	# Refresh the new active actor's action points (if it's a player).
-	# Monsters will get their AP refresh through their own AI command flow
-	# in Phase 1 when MonsterState exists.
+	# Refresh the new active actor's action points — player-only by design.
+	# Monsters don't yet take AP-driven actions, so a missing refresh on a
+	# monster is intentional, not stale code. Whether monster turns will
+	# share this AP path or use a separate mechanism is an open design
+	# question (see IDEAS.md), to be decided when monster AI lands.
 	var next_player: PlayerState = state.find_player(next_actor_id)
 	if next_player != null:
 		next_player.action_points = next_player.max_action_points

@@ -1,12 +1,13 @@
 ## AttackCommand
 ##
-## A player attacks another actor. The first concrete Command subclass —
+## An actor attacks another actor. The first concrete Command subclass —
 ## the canonical example of how every state-changing action flows through
 ## the command pipeline.
 ##
-## Phase 1 (early): targets are PlayerStates only (PvP-style for testing
-## the pipeline). When MonsterState exists, the find logic generalizes to
-## "any actor with HP and AC."
+## Both attacker and target are resolved via state.find_actor(), so either
+## may be a PlayerState or a MonsterState. The duck-typed access to .hp /
+## .ac / .action_points works uniformly across both — see MonsterState's
+## doc header for why no shared base class.
 ##
 ## Resolution sequence:
 ##   1. Roll d20 + attack_modifier vs. target.ac
@@ -21,12 +22,13 @@
 ## stats via state.find_ability(). Until then, the caller passes the stats
 ## in directly. See ARCHITECTURE.md for the eventual ability-lookup pattern.
 ##
-## Knows about: GameState, PlayerState, GameEvent, RNGService (via state).
-## Used by: CommandProcessor (Phase 1, when written), tests.
+## Knows about: GameState, GameEvent, RNGService (via state). Treats
+##              attacker / target as untyped Resources (duck-typed).
+## Used by: CommandProcessor, tests.
 
 class_name AttackCommand extends Command
 
-## The actor being attacked. Looked up via state.find_player(target_id) for now.
+## The actor being attacked. Looked up via state.find_actor(target_id).
 @export var target_id: String = ""
 
 ## Bonus added to the d20 attack roll. Negative values are valid (e.g.
@@ -50,8 +52,8 @@ func _init(p_actor_id: String = "", p_target_id: String = "") -> void:
 
 
 func validate(state: Resource) -> bool:
-	var attacker: PlayerState = state.find_player(actor_id)
-	var target: PlayerState = state.find_player(target_id)
+	var attacker: Resource = state.find_actor(actor_id)
+	var target: Resource = state.find_actor(target_id)
 	if attacker == null or target == null:
 		return false
 	if attacker.hp <= 0:
@@ -65,8 +67,8 @@ func validate(state: Resource) -> bool:
 
 func apply(state: Resource) -> Array[GameEvent]:
 	var events: Array[GameEvent] = []
-	var attacker: PlayerState = state.find_player(actor_id)
-	var target: PlayerState = state.find_player(target_id)
+	var attacker: Resource = state.find_actor(actor_id)
+	var target: Resource = state.find_actor(target_id)
 
 	# === Attack roll ===
 	var attack_natural: int = state.rng.roll(20)

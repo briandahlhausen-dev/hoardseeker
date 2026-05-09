@@ -542,6 +542,36 @@ Total audio budget: ~$300-400.
 
 ---
 
+## 2026-05-09 — No CombatantState base class; find_actor returns Resource
+
+**Status**: Decided
+
+**Context**: Phase 1 chunks 1-2 needed AttackCommand to target either a PlayerState or a MonsterState. Two reasonable shapes for the polymorphism:
+- (a) Extract a shared `CombatantState` base class carrying the common combat fields (`hp`, `ac`, `action_points`, `actor_id`, etc.), then `find_actor() -> CombatantState`.
+- (b) Keep `PlayerState` and `MonsterState` as siblings (no shared base), and have `find_actor() -> Resource` (untyped). Callers access `.hp` / `.ac` / `.action_points` via duck typing.
+
+**Decision**: Approach (b). Sibling Resources, no `CombatantState` base, `find_actor` returns untyped `Resource`. `AttackCommand.validate()` and `AttackCommand.apply()` type their attacker/target locals as `Resource`.
+
+**Rationale**:
+- The two have **diverging lifecycle concerns**, not just diverging fields. Players carry subclass draft, inventory, gold, glints, artifacts, run-progress state. Monsters carry AI behaviors, loot tables, spawn metadata, despawn rules. A shared base would either bloat with members one side ignores, or force a painful split later when divergence grows.
+- The shared *combat* surface is small (5 fields). The shared *lifecycle* surface is zero. Extracting a base for 5 fields when the rest of the type is disjoint is a poor trade.
+- `find_actor`'s untyped return makes the polymorphism boundary explicit. Callers that need "either kind" can't accidentally reach for player-only fields. Callers that genuinely need a player still use `find_player`.
+- Composition over inheritance fits Godot's Resource model — round-tripping disjoint types via the resource saver is straightforward; forcing a base class buys nothing the runtime cares about.
+
+**Trade-offs**:
+- No compile-time guarantee that PlayerState and MonsterState share the same combat-field shape. If MonsterState renamed `hp` to `vitality`, AttackCommand would silently break at runtime. Mitigation: `test_scripted_fight.gd` exercises the cross-type path on every CI run.
+- "Any actor" code can't use static typing for the actor variable; everything is `var x: Resource` plus trust in the convention.
+- New contributors might expect a base class and be momentarily confused. Mitigation: the `MonsterState` doc header explicitly explains the choice and references this entry by date.
+
+**Load-bearing files** (where this decision shapes the code):
+- [src/core/monster_state.gd](hoardseeker/src/core/monster_state.gd) — the sibling Resource; doc header carries the rationale.
+- [src/core/game_state.gd](hoardseeker/src/core/game_state.gd) — `find_actor()` returns `Resource`; doc comment explains why.
+- [src/systems/combat/attack_command.gd](hoardseeker/src/systems/combat/attack_command.gd) — uses `find_actor`, types locals as `Resource`.
+
+**Revisit if**: PlayerState and MonsterState ever come to share 5+ fields with identical semantics AND 5+ command types need the cross-type lookup. At that combined threshold the structural commonality is large enough that base-class extraction costs less than the duplication. Current count: ~5 shared fields, 1 cross-type command. Well under threshold.
+
+---
+
 ## Open questions (not yet decided)
 
 These need to be revisited as the slice progresses:

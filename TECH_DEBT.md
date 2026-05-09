@@ -6,6 +6,31 @@
 
 ---
 
+## 2026-05-09 — `gh pr merge --delete-branch` fails when run from a worktree [LOW]
+
+**Where**: PR-merge workflow when run from inside any git worktree (e.g., `.claude/worktrees/intelligent-yonath-9e8856`). The parent repo's main checkout is held by the parent worktree; the merge command's local cleanup tries to switch to it and fails.
+
+**What's wrong**: `gh pr merge <N> --merge --delete-branch` performs the merge remotely via the GitHub API, then tries to clean up locally by switching to `main` and running `git branch -d` on the merged branch. From inside a worktree this fails:
+
+```
+failed to run git: fatal: 'main' is already used by worktree at 'C:/Users/brian/Desktop/Hoardseeker'
+```
+
+The remote merge succeeds normally — the merge commit lands, the remote branch is deleted, the PR closes. Only the local branch cleanup step throws this error. First-time encounter looks alarming; the actual blast radius is zero.
+
+**Workaround (verified)**:
+1. Run the merge with `--delete-branch=false` (or just drop `--delete-branch`) when working from a worktree, then delete the remote branch separately via the GitHub UI or `gh api -X DELETE`.
+2. Alternative: drop the flag entirely, let the merge succeed, then run `git fetch --prune` to sync the remote-side branch deletion that GitHub's "Delete branch on merge" repo setting handles.
+3. Alternative: do PR merges from the parent repo (not a worktree) when convenient.
+
+**Why we deferred the fix**: Hit during the chunk 1 merge. Workaround is one extra step and reliable. Not worth a wrapper script yet.
+
+**Cost of not fixing**: Every PR merge from a worktree throws this error. Easy to misread as a fatal merge failure on first encounter, but the merge has actually succeeded. New contributors (or future-Claude in a fresh session) will trip on this once and then know.
+
+**Suggested fix when revisited**: A small wrapper around `gh pr merge` that detects whether the cwd is inside a worktree (`git rev-parse --is-inside-work-tree` + checking `git worktree list`) and adapts the flags. Or: file a bug against `gh` to handle the multi-worktree case gracefully.
+
+---
+
 ## 2026-05-09 — Dispatch / mobile push setup is partial [LOW]
 
 **Where**: User-side configuration on the local machine being handed off FROM (and pending on whatever new machine takes over).
