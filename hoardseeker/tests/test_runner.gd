@@ -59,6 +59,16 @@ func _init() -> void:
 	var fight_test: Object = fight_script.new()
 	total_failures.append_array(_run("Scripted fight (Phase 2 gate)", fight_test))
 
+	test_count += 1
+	var ability_def_script: Script = load("res://tests/test_ability_def.gd")
+	var ability_def_test: Object = ability_def_script.new()
+	total_failures.append_array(_run("AbilityDef + fighter_slash.tres", ability_def_test))
+
+	test_count += 1
+	var use_ability_script: Script = load("res://tests/test_use_ability_command.gd")
+	var use_ability_test: Object = use_ability_script.new()
+	total_failures.append_array(_run("UseAbilityCommand", use_ability_test))
+
 	# --- Summary ---
 	print("================================================================")
 	if total_failures.is_empty():
