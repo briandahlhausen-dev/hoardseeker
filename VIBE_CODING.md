@@ -152,14 +152,16 @@ Set these up before any serious code is written.
 
 ### Decide by month 3
 
-These come into play when you start producing visible content.
+These come into play when you start producing visible content. **Bootstrap mode (<$5k total) shapes every choice below.**
 
 | Decision | Options | Cost ballpark | Notes |
 |---|---|---|---|
-| **Concept art tool** | Midjourney, Stable Diffusion (ComfyUI), DALL-E 3, Adobe Firefly | $10-30/mo | Used for placeholder art, mood boards, illustrator references. Not for final art. |
-| **Image cleanup** | Photoshop, Affinity Photo, Photopea (free) | $0-20/mo | For touching up AI-generated concept art. Photopea is free and runs in browser. |
-| **Music prototyping** | Suno, Udio | $10-30/mo | For prototype tracks before hiring a composer. Never ship AI music as final. |
-| **SFX library** | Freesound.org (free, attribution), Soundsnap, ElevenLabs Sound Effects | $0-30/mo | Most SFX can be free. Custom dice sounds = recording session, ~$200. |
+| **AI generation tool (production, not just prototype)** | Midjourney, Stable Diffusion (ComfyUI local), DALL-E 3 | $0-30/mo | Used for actual shipped art via the cleanup workflow. Pause subscription between heavy generation periods to control cost. |
+| **Image cleanup** | Krita (free, recommended), Photopea (free, browser), Photoshop (avoid for cost) | $0 | Krita is the primary tool. Free. |
+| **Graphics tablet** | Wacom Intuos S, XP-Pen alternatives | ~$50-80 one-time | Required for meaningful cleanup. One-time cost. |
+| **Music curation** | Kevin MacLeod (free, attribution), FreePD (CC0), Pixabay Music, Tabletop Audio | $0 | Primary music source. No subscription. Build a curated track list with verified licenses. |
+| **SFX library** | Freesound.org (CC0 only, verify each file) | $0 | All SFX from CC0 sources. Custom dice clack via phone + Audacity, $0. |
+| **Music prototyping (internal only)** | Suno, Udio | Optional, $10-30/mo | Internal prototyping only. Never shipped. Skip if budget tight. |
 
 ### Decide by month 5
 
@@ -174,16 +176,16 @@ When you go public with a Steam page.
 
 ### Decide by month 6-8
 
-The big creative contractor decisions. These take time to find people, so start scouting early.
+Under bootstrap mode, the big-contractor lane is closed. The decisions here are about the one tightly-scoped commission we *do* make and confirming our DIY production tracks are on schedule.
 
 | Decision | Options | Cost ballpark | Notes |
 |---|---|---|---|
-| **Illustrator** | ArtStation, Reddit r/HungryArtists, Cara, personal network | $5k-25k for full launch art | The single biggest budget decision. Start scouting month 4, contract month 6. |
-| **Composer** | AirGigs, Soundtrack.net, university film-scoring programs, personal network | $3k-15k for ~90 min of music | Start month 6-8, contract by month 9. |
-| **Voice actor (DM narrator)** | Casting Call Club, Voice123, BackStage | $1.5k-6k for ~200 lines | Start month 8, contract by month 10. |
-| **SFX designer (optional)** | AirGigs, A Sound Effect, freelance sound designers | $1k-5k | Skip if budget tight; layered free SFX work fine. |
+| **Illustrator** | — | **SKIP** under bootstrap mode | Replaced by AI generation + hand cleanup workflow. See `DECISIONS.md` (Path B). |
+| **Signature theme composer (1 track only)** | AirGigs lower tier, music school students, Reddit r/composer | ~$300 (one-time) | Commission ONE signature theme for title/boss. Royalty-free covers the rest. Start scouting month 6, contract by month 8. |
+| **Voice actor** | — | **SKIP** under bootstrap mode | Narration is text-only forever. See `DECISIONS.md`. |
+| **SFX designer** | — | **SKIP** under bootstrap mode | Layered Freesound CC0 + custom dice recording covers the need. |
 
-If your total budget is tight (< $5k), you can lean heavily on AI-generated concept art with hand cleanup and royalty-free music. The game will look less premium but is shippable. We'll have a frank budget conversation around month 4.
+**Bootstrap budget reality check** (run this monthly starting month 4): total spend so far + projected remaining vs. $5,000 cap. If projected breaches the cap, the response is *cut scope*, not *raise the budget*. The bootstrap-mode pivot triggers in `RESILIENCE.md` and the contingency plan in `ROADMAP.md` exist precisely for this case.
 
 ### Decide by month 12-13
 
@@ -211,65 +213,88 @@ To keep the stack manageable for a non-technical solo dev:
 
 You're not an artist or musician. Here's the disciplined process for getting professional-looking output.
 
-### Visual assets
+### Visual assets (bootstrap mode workflow)
 
-**For placeholder / concept art (months 1-6):**
-1. Generate concept with Midjourney or SD using a consistent prompt template.
-2. Touch up in Photopea (crop, color-correct, remove artifacts).
-3. Drop into Godot. This is fine for the slice and demo.
-4. Note: AI-generated concept *can* be used in the slice but should be replaced before launch with original or contracted art for legal safety and quality.
+**The production model is: AI generation → mandatory human cleanup → ship.** No contracted illustrator. Every asset that ships gets hand-touched in Krita or Photopea before going into the game. The cleanup is what determines whether the result reads as "thoughtful indie art" or "AI slop."
 
-**For final art (months 6+):**
-1. Brief the illustrator with concept references (your AI generations are great references — be transparent about that).
-2. Establish a style guide with the illustrator: 2-3 reference pieces nailed down, then everything else follows.
-3. Iterate in batches: 5 portraits at a time, review, approve, next batch.
-4. Always own your assets. Contract specifies "work for hire" with full IP transfer.
+**Tools (one-time setup):**
+1. Midjourney subscription (~$30/mo during heavy generation periods, can pause between batches) OR local Stable Diffusion if hardware allows.
+2. **Krita** (free) — primary cleanup tool. Better tablet support than Photopea.
+3. **Photopea** (free, browser-based) — alternative for quick edits and PSD interop.
+4. **Wacom Intuos S** (~$80, one-time) — meaningful cleanup is hard without a tablet.
+5. **Figma** (free tier) — for UI layout, frame composition, icon arrangement.
+
+**The cleanup discipline (this is what determines quality):**
+1. Generate with a locked style guide: same prompt template, same model version, same color palette across all assets in a category.
+2. Inspect every generation for AI tells (extra fingers, melted geometry, asymmetric eyes, weird text, inconsistent armor).
+3. Hand-paint over problem areas in Krita with a tablet. Even a rough overpaint reads as human.
+4. Adjust line weights, color balance, and edge softness for visual consistency across the asset set.
+5. Final pass: compare side-by-side with previously approved assets. Style drifting? Adjust before continuing the batch.
+
+**Style guide first, generation second:**
+1. Lock 3-5 reference pieces nailed down before generating in volume. These become the visual north stars.
+2. Document the prompt template, model version, and any seed values in `assets/STYLE_GUIDE.md` (we'll create this when generation begins).
+3. The bar: anyone could pick up the project and produce on-style art if the style guide is good. If they can't, the guide isn't tight enough.
 
 **For UI / icons:**
-1. UI design can be solo-dev friendly. Use Figma's free tier for layout.
-2. Ability icons: ~250 needed at launch. Either contract a small icon set ($1-3k) or generate + cleanup with strict consistency.
-3. Don't try to design UI from scratch — adapt a known D&D-feeling pattern (parchment + ink) and stay disciplined.
+1. UI layout in Figma, then implement in Godot directly. Adapt a known D&D-feeling pattern (parchment + ink) and stay disciplined.
+2. Ability icons: ~250 at launch. AI generation + 15-30 minutes cleanup per icon. Total cleanup workload ~60-100 hrs spread across the project.
+3. Artifact icons: ~80 at launch. ~30 minutes cleanup each. Total ~40 hrs.
+4. Reuse aggressively: ability icons share frame/border treatments; race variants are color/accessory swaps not unique illustrations.
 
-### Audio assets
+**Backup discipline:**
+- Keep both the AI source generation AND the cleaned-up final, with a naming convention (`portrait_fighter_human_v1_raw.png`, `portrait_fighter_human_v1_clean.png`).
+- Document the prompt and any seed used so a regen for consistency tweaks is reproducible.
 
-**Music:**
-1. Prototype with Suno/Udio for early builds. *Internal use only.*
-2. Around month 8, contract a real composer. Provide your prototypes as references — *"this is the vibe, replace with original."*
-3. Final tracks delivered as WAV, looped versions for in-game use, plus full versions for trailers.
-4. Always own the music. Contract: full IP transfer, perpetual license.
+**Total estimated cleanup workload over 18 months:** ~275 hours (portraits, ability icons, artifact icons, monster portraits, biome backgrounds). At ~15 hours/month, well inside the 40-hour weekly cap with significant slack for rest and other work.
 
-**Voice (DM narrator):**
-1. Prototype with ElevenLabs for placeholder narration in builds. *Internal use only.*
-2. Around month 10, contract a voice actor. Provide your prototypes as references for tone.
-3. Record in a single session (cheaper) or batch sessions as content is finalized.
-4. Always own the recordings. Contract: full IP transfer + buyout (no per-game royalties).
+### Audio assets (bootstrap mode workflow)
 
-**SFX:**
-1. Build a sound bank from Freesound.org (CC0 only — verify license). Layer multiple sounds for richness.
-2. The dice roll sound is the most important. Consider a custom recording session ($200-500) for the perfect dice clack.
+**Music** — primary soundtrack is curated royalty-free + one commissioned signature theme:
+1. Curate from royalty-free orchestral sources: Kevin MacLeod (incompetech.com, attribution required), FreePD (CC0), Pixabay Music (commercial-OK), Tabletop Audio (some commercial-licensed tracks). Verify each track's license individually before shipping.
+2. Maintain `audio/MUSIC_LICENSES.md` with per-track license + attribution requirements.
+3. Around month 8, commission ONE signature theme (~$300) from a music school student, AirGigs lower tier, or Reddit r/composer for the title screen / boss intro. Provide royalty-free references as the "vibe baseline" with the brief: *"original track, this style, this length."*
+4. Contract for the signature theme: full IP transfer, perpetual license, work-for-hire — even at low budget. Standard contract, no exceptions.
+5. AI-generated music is not used in shipped product. Suno/Udio is acceptable for internal prototyping only (e.g., temp soundtrack while waiting on royalty-free curation).
+
+**Voice (DM narrator)** — cut entirely:
+1. All narration is text-only. No voice acting in shipped product, ever.
+2. Stylized parchment overlay with subtle SFX (parchment unfurling, ink scratch) replaces the atmospheric weight a voice would carry.
+3. AI voice (ElevenLabs / similar) is acceptable for the user's personal prototyping if it helps writing pacing — never shipped.
+
+**SFX** — Freesound + custom dice recording:
+1. Build a sound bank from Freesound.org (CC0 only — verify license per file). Layer multiple sounds for richness.
+2. The dice roll sound is the most important. Custom recording with phone + Audacity ($0): record real dice on real surfaces (wood, stone, parchment) and layer with effect processing.
 3. Use Audacity (free) for editing.
+4. Maintain `audio/SFX_LICENSES.md` with per-file source + license verification.
 
-### The legal-safety rule on AI assets
+### The AI-content rule (revised 2026-05-08 for bootstrap mode)
 
-**Never ship AI-generated content as final art, music, or voice in a commercial release.** Reasons:
+> **AI-generated content may appear in shipped product ONLY when:**
+> 1. Every asset has substantial hand cleanup with documented process. The cleanup is what determines final quality, not the prompt.
+> 2. The Steam store page discloses AI use prominently and accurately, per Steam's required "AI Generated Content" field.
+> 3. We maintain a public "How this art was made" statement on the project website / Discord, explaining the workflow honestly.
+>
+> **AI-generated music and AI-generated voice remain off-limits in shipped product.** These categories carry higher community sensitivity and weaker cleanup options. Royalty-free music + one commissioned signature theme + text-only narration are the alternatives.
 
-- Steam policy on AI content is evolving and could change.
-- Copyright on AI-generated work is legally murky in most jurisdictions.
-- Players sometimes review-bomb games for using AI art ("AI slop" backlash).
-- Quality ceiling is lower than human-made.
+The earlier blanket "never ship AI as final" rule was written assuming a contractor-funded production model. Bootstrap mode (<$5k total) makes that model infeasible. The revised rule keeps the *spirit* of the original (don't ship raw slop, be honest with players) while permitting the specific bootstrap-feasible workflow. See `DECISIONS.md` (entry: *Revised AI-content rule, 2026-05-08*) for full rationale.
 
-**AI is excellent for:**
-- Internal prototyping
-- Mood boards and references for human artists
+**Risks we are explicitly accepting:**
+- Steam may tighten AI policy further. We will comply with whatever the policy is at submission time.
+- The TTRPG/D&D audience is the most AI-art-skeptical audience on Steam. Review-bomb risk is real and non-trivial.
+- Cleanup discipline is what protects us from the worst-case reception. Cleanup hours are not optional.
+
+**AI is still excellent for:**
+- Internal prototyping (no shipping bar)
+- Mood boards and visual references
 - Placeholder art in dev builds
-- Concept exploration before commissioning
+- Concept exploration before the cleanup pass
 
-**AI is not for:**
-- Anything in the released game
-- Anything in your trailer
-- Anything in your Steam screenshots
-
-If budget forces AI in the final product, get explicit written consent from a contracted human artist who has reworked it substantially. Document the process. Be transparent with players if it ever comes up.
+**AI is still off-limits for:**
+- Music in shipped product (royalty-free + one commissioned theme is the path)
+- Voice in shipped product (narration is text-only forever)
+- Any asset that did not receive substantial human cleanup
+- Anything in the trailer or Steam screenshots that hasn't gone through cleanup discipline
 
 ---
 
@@ -458,15 +483,15 @@ There are limits to what AI can do for you. Plan to engage humans on:
 
 | Need | Where | When |
 |---|---|---|
-| **Contract review** | Lawyer or experienced indie dev friend | Any contract over $5k. |
-| **Tax / business setup** | Accountant familiar with software businesses | Month 1-2. Form an LLC or equivalent. |
-| **Playtesting** | Friends, family, indie communities, paid playtesters | Month 4 onward, monthly. |
-| **Marketing strategy** | Indie marketing consultants, GameDev marketing courses, /r/gamedev | Month 5-8. |
-| **Publisher negotiation** | Industry mentor, second opinion on terms | Month 12-13. |
-| **Localization** | Localization service, native speakers | Year 2. |
-| **Accessibility review** | Game Accessibility Conference resources, accessibility consultants | Month 14-15. |
+| **Contract review** | Lawyer, experienced indie dev friend, or AI-assisted review for sanity-check (any contract, even small ones) | Any contract — even the ~$300 signature theme commission. The cost of a bad clause is higher than the time it takes to read. |
+| **Tax / business setup** | Accountant familiar with software businesses | Month 1-2. Form an LLC or equivalent. Budget ~$100-800 depending on state. |
+| **Playtesting** | Friends, family, indie communities, free playtesters | Month 4 onward, monthly. Paid playtesters skipped under bootstrap mode. |
+| **Marketing strategy** | Free resources first: /r/gamedev, How To Market A Game blog, Chris Zukowski's free content | Month 5-8. Paid consultants skipped under bootstrap mode. |
+| **Publisher negotiation** | Industry mentor, second opinion on terms via Discord communities | Month 12-13. Free / favor-economy first. |
+| **Localization** | Free first: deferred entirely under bootstrap mode | Year 2 post-launch only, contingent on revenue. |
+| **Accessibility review** | Game Accessibility Conference resources (free), GAconf YouTube talks | Month 14-15. Self-audit first; paid consultant only if revenue allows. |
 
-Budget for these. ~$2-5k total over 18 months for human consultation is reasonable and high-leverage.
+Bootstrap budget allocation for human consultation: **near zero pre-launch.** LLC setup is the one likely paid consultation (~$100-800 one-time). Everything else leans on free resources and community goodwill.
 
 ---
 
@@ -488,8 +513,8 @@ Everything you need to decide, sorted by deadline. Print this. Tape it somewhere
 - [ ] SFX library bookmarked (Freesound.org)
 
 ### Month 4
-- [ ] Total project budget defined (and any contractor budget)
-- [ ] Begin scouting illustrators (ArtStation portfolios, network)
+- [ ] First bootstrap-budget reality check (spend-to-date + projected remainder vs. $5k cap)
+- [ ] Begin AI generation experiments + lock the visual style guide (3-5 north-star reference pieces)
 - [ ] First playtester sessions begin (just friends)
 
 ### Month 5
@@ -500,16 +525,18 @@ Everything you need to decide, sorted by deadline. Print this. Tape it somewhere
 - [ ] First public devlog post
 
 ### Month 6
-- [ ] Illustrator contracted, style guide work begins
-- [ ] Begin scouting composer
+- [ ] Visual style guide locked (`assets/STYLE_GUIDE.md`) — prompt template + reference pieces approved
+- [ ] First batch of finished portraits (3-5) shipped through the full AI-gen + cleanup pipeline
+- [ ] Begin scouting for the one ~$300 commissioned signature theme (music school programs, AirGigs, r/composer)
 
 ### Month 8
-- [ ] Composer contracted
-- [ ] Begin scouting voice actor for narrator
+- [ ] Signature theme commissioned (~$300, contract with full IP transfer)
+- [ ] Royalty-free music curation in `audio/MUSIC_LICENSES.md` — at least 10 verified tracks
 - [ ] First trailer cut (rough)
 
 ### Month 10
-- [ ] Voice actor contracted
+- [ ] Signature theme delivered + integrated
+- [ ] Text-only narration overlay polished (parchment reveal animation, ink-scratch SFX)
 - [ ] Steam Next Fest registration submitted (timing dependent on fest schedule)
 
 ### Month 12
