@@ -491,6 +491,57 @@ Total audio budget: ~$300-400.
 
 ---
 
+## 2026-05-09 — CommandProcessor logical timestamp is derived from log size, not a separate counter
+
+**Status**: Decided
+
+**Context**: When implementing `CommandProcessor.process(command, state)` (Phase 1), needed a way to assign monotonic logical timestamps to each command + the events it emits. Two reasonable approaches: (a) maintain a counter on the processor instance, increment per command; (b) derive the timestamp from `state.event_log.commands.size()` at process time.
+
+**Decision**: Use approach (b). Each processed command gets `timestamp_logical = event_log.commands.size()` BEFORE being appended. So command 0 lands at logical time 0, command 1 at logical time 1, etc. Events emitted by that command inherit the same logical time.
+
+**Rationale**:
+- The event log IS the source of truth for "what has happened in this run." A separate counter is a second source that can drift.
+- `RNGService.stream_position` follows the same pattern (state-derived, not separate counter).
+- Replay just re-walks the log; no counter to reset.
+- CommandProcessor stays stateless (RefCounted with no fields). Simpler to reason about, trivially safe to construct ad-hoc.
+- If we ever needed to truncate the log (rollback), the counter would be wrong; the derived approach is correct by construction.
+
+**Trade-offs**:
+- The processor needs read access to `state.event_log` to know what time it is. This is fine — the processor already mutates the log; reading it is cheap.
+- Doesn't survive log corruption — if the log gets truncated, the next "logical time" jumps. But truncation isn't a use case we support.
+
+**Revisit if**: We add a use case where commands get assigned logical times before they're processed (e.g. clients pre-stamp commands and the processor just validates the stamp). At that point the source of truth shifts to whoever's doing the stamping.
+
+---
+
+## 2026-05-09 — Adopt the Friday audit routine (scheduled remote agent)
+
+**Status**: Decided
+
+**Context**: `VIBE_CODING.md` and `RESILIENCE.md` both prescribe a Friday end-of-week audit (test status, file size, tech debt review, weekly recap). For most of the project's life this would have to be a manual ritual — easy to skip, easy to forget. With the Claude GitHub App now installed on `briandahlhausen-dev/hoardseeker`, a scheduled remote agent can run the audit automatically.
+
+**Decision**: A weekly scheduled remote agent (routine ID `trig_014n5heywcVN3czDASX9bhgL`) runs every Friday at `0 20 * * 5` UTC (= Friday 4pm EDT / 3pm EST). It:
+- Reads CLAUDE.md / VIBE_CODING.md / RESILIENCE.md / SESSION_PROTOCOL.md, plus most recent entries in DECISIONS.md / RECAPS.md / TECH_DEBT.md
+- Reviews the week's git activity, CI status (via gh), .gd file sizes (>150 lines), TODO/FIXME deltas, tech debt aging, and "Currently in flight" staleness
+- Opens a PR titled `Friday audit YYYY-MM-DD` against main containing a draft RECAPS.md entry (5-line format, "How I felt" left for user) and audit findings in the PR description
+- **Does NOT merge the PR** — user reviews on Monday
+- Opens an `AUDIT-CRITICAL: <summary>` GitHub issue if anything urgent is found (failing CI on main, BLOCKER tech debt unfixed >7 days, RESILIENCE.md crisis warnings)
+
+**Rationale**:
+- Discipline rituals only work if they're reliable; cron beats memory.
+- The PR-not-commit pattern means the audit has zero unilateral authority — it surfaces findings, the user decides what's true and what to merge.
+- Critical-issue escalation routes truly urgent things (broken main, abandoned project signals) to GitHub notifications you'd see on your phone.
+- Cost: the routine runs in Anthropic's cloud at the user's existing Pro/Max plan rate. No additional spend.
+
+**Trade-offs**:
+- The remote agent doesn't have Godot installed, so it can't run tests directly — it checks CI status instead. This is fine because CI runs the tests on every push; CI is the source of truth for "did the tests pass this week."
+- Adds a weekly PR to review. If the user ignores the PR for several weeks, the cadence collapses (still better than no audit at all).
+- If the audit ever produces a low-quality output, the prompt may need tuning.
+
+**Revisit if**: PRs become noise the user routinely closes without reading (signals the prompt is too loose); or if the user starts running manual end-of-week audits with me consistently and the routine becomes redundant.
+
+---
+
 ## Open questions (not yet decided)
 
 These need to be revisited as the slice progresses:
