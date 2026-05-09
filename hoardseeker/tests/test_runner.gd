@@ -54,6 +54,11 @@ func _init() -> void:
 	var monster_test: Object = monster_script.new()
 	total_failures.append_array(_run("MonsterState", monster_test))
 
+	test_count += 1
+	var fight_script: Script = load("res://tests/test_scripted_fight.gd")
+	var fight_test: Object = fight_script.new()
+	total_failures.append_array(_run("Scripted fight (Phase 2 gate)", fight_test))
+
 	# --- Summary ---
 	print("================================================================")
 	if total_failures.is_empty():
