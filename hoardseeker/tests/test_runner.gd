@@ -39,6 +39,11 @@ func _init() -> void:
 	var attack_test: Object = attack_script.new()
 	total_failures.append_array(_run("AttackCommand", attack_test))
 
+	test_count += 1
+	var processor_script: Script = load("res://tests/test_command_processor.gd")
+	var processor_test: Object = processor_script.new()
+	total_failures.append_array(_run("CommandProcessor", processor_test))
+
 	# --- Summary ---
 	print("================================================================")
 	if total_failures.is_empty():
