@@ -18,7 +18,7 @@ The success patterns from solo-developer breakouts are clear: **one strong verb,
 - **The frame is "D&D roguelike."** Instantly understood by tens of millions of TTRPG-adjacent players.
 - **Replayability is built-in:** 12 classes × subclasses × artifact combos × duo pairs.
 - **Streamable:** crits, near-deaths, clutch revives, comeback runs.
-- **Auteur aesthetic:** painted 2D realism, parchment UI, orchestral score. Cohesive and ownable.
+- **Auteur aesthetic:** stylized 2D illustration with sourcebook tone, parchment UI, curated orchestral mood. Cohesive and ownable on a bootstrap budget.
 
 ## Who we're building for
 
@@ -41,9 +41,9 @@ These are the values every design decision is measured against. If a feature doe
 
 ## Tone & aesthetic
 
-- **Visual**: 2D painted realism. Think Slay the Spire's character art but pushed toward Magic: the Gathering / Heroes of Might and Magic illustration territory. Parchment-and-ink UI. Real-feeling weight to weapons, armor, magic. Saturated but not garish.
-- **Audio**: Orchestral fantasy. Strings, French horns, choral swells on bosses. Inspired by Baldur's Gate, classic D&D tabletop ambient music. Diegetic sounds — clinking gold, dice on wood, rustling parchment — for UI feedback.
-- **Narration**: Sparse DM voice. Boss intros, deaths, major artifact pickups, run-ending moments. Never on routine actions. The narrator is the *only* voice in the game and should feel like a dungeon master at a real table — wry, knowing, occasionally cruel.
+- **Visual**: Stylized 2D illustration with a tabletop-sourcebook feel. Pen-and-ink linework, parchment textures, restrained painted shading. Inscryption-adjacent in tonal weight, but warmer and more D&D-flavored. Production model is AI generation + mandatory hand cleanup; quality lives in the cleanup, not the prompt. Parchment-and-ink UI. Saturated but not garish.
+- **Audio**: Orchestral fantasy curated from royalty-free sources (Kevin MacLeod, FreePD, Pixabay Music, Tabletop Audio) with one commissioned signature theme for title screen / boss. The "playing D&D in a candle-lit room" mood, not a 90-minute original score. Diegetic sounds — clinking gold, dice on wood, rustling parchment — carry most of the audio identity.
+- **Narration**: Sparse text-only DM narration. Boss intros, deaths, major artifact pickups, run-ending moments. Never on routine actions. The narrator is *written*, not voiced — appearing in a stylized parchment overlay with subtle SFX (parchment unfurl, ink scratch). Voice should feel like a dungeon master at a real table — wry, knowing, occasionally cruel — but the player reads, not listens.
 - **Tone**: Teen rating. Classic D&D. There's blood when things die. Skeletons, undead, dark caves. But not Darkest Dungeon grim — there's also tavern warmth, treasure-glow, the joy of a perfect crit.
 - **Writing**: Light framing story (you're an adventurer, the dungeon needs clearing). Dialogue is short, evocative, slightly archaic without being parodic. Never breaks the fourth wall.
 
@@ -52,9 +52,9 @@ These are the values every design decision is measured against. If a feature doe
 - **Vertical slice (month 4)**: 1 class, 1 biome, 1 boss, full loop. We know if the core feel is fun.
 - **Steam page live (month 5)**: First trailer cut. Devlog cadence established.
 - **Steam Next Fest demo (month 6-9, depending on schedule)**: 2 classes, 1 biome. Target 15,000+ wishlists during fest.
-- **Pre-launch (month 14)**: 50,000+ wishlists. Publisher signed for QA/marketing.
-- **Launch (month 16-22)**: 12 classes, 4 biomes, solo + duo modes, ranked ladders live. Realistic week-1: 25,000-100,000 copies depending on wishlist conversion.
-- **Year 2**: Free content updates (new classes, seasonal events, class-spotlight ladders). Console ports via publisher. Sustained competitive community.
+- **Pre-launch (month 14)**: 25,000-50,000+ wishlists. Self-publish on Steam baseline; publisher partnership only if it materializes on favorable terms.
+- **Launch (month 18-20)**: 12 classes, 2 biomes (Forgotten Crypt + Sunken Halls), solo + duo modes, ranked ladders live. Realistic week-1: 5,000-30,000 copies under bootstrap-mode self-publish; higher with publisher partnership.
+- **Year 1-2 free updates**: Biome 3 (Ember Reach) and Biome 4 (Astral Vault) ship as free content drops. Plus seasonal events, class-spotlight ladders. Console ports only via publisher partnership if available.
 
 ## What failure looks like (and how we avoid it)
 
@@ -66,4 +66,4 @@ These are the values every design decision is measured against. If a feature doe
 
 ## The one-paragraph identity
 
-Hoardseeker is the roguelike deckbuilder for everyone who's ever wished a Slay the Spire run felt like a real D&D session. It's fast, dice-driven, and ruthless. You can play alone or with one friend, and either way there's a ladder to climb. It looks like a painting and sounds like a Baldur's Gate cutscene. It's built by one person with AI assistance, designed to be the kind of game streamers play for hundreds of hours and that fills a Discord with people sharing their wildest runs.
+Hoardseeker is the roguelike deckbuilder for everyone who's ever wished a Slay the Spire run felt like a real D&D session. It's fast, dice-driven, and ruthless. You can play alone or with one friend, and either way there's a ladder to climb. It looks like a tabletop sourcebook brought to life and sounds like a candle-lit table at midnight. It's built by one person with AI assistance under a strict bootstrap budget, designed to be the kind of game streamers play for hundreds of hours and that fills a Discord with people sharing their wildest runs.

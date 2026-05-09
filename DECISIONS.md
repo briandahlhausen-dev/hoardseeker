@@ -302,14 +302,176 @@ Each entry:
 
 ---
 
+## 2026-05-08 — Bootstrap budget mode confirmed (<$5k total)
+
+**Status**: Decided
+
+**Context**: Budget reality check. The original docs assumed contractor-driven art/audio production (~$10-50k). Actual project budget is **<$5,000 total** over the 18-22 month pre-launch window.
+
+**Decision**: Operate in bootstrap mode for the duration of the pre-launch project. Total spend cap: $5,000 across all categories (tools, subscriptions, services, the Steam Direct fee, business setup, AI subscriptions, any commissioned work). After fixed overhead this leaves roughly $2,500-3,500 for creative work.
+
+**Rationale**:
+- Forces tight scope discipline from day one rather than mid-project crisis.
+- Aligns the production model with what one solo developer can realistically execute with AI assistance.
+- Removes a class of failure modes (contractor disputes, payment issues, contractor scope creep).
+- Makes launch math survivable on much lower revenue — break-even possible on hundreds of sales rather than thousands.
+
+**Trade-offs**:
+- Cannot afford contracted illustrator, composer, or voice actor at launch.
+- Aesthetic ceiling is lower than the original "BG3-feeling premium" vision.
+- Marketing pitch must shift to match what we can actually ship.
+- Several downstream decisions in this document follow from this constraint (art direction, audio direction, narration, scope cuts).
+
+**Revisit if**: Demo reception and wishlist count justify contractor investment before launch. A successful Steam Next Fest with 25k+ wishlists could fund a polish pass with a contracted illustrator pre-launch.
+
+---
+
+## 2026-05-08 — Art direction: AI-generated stylized illustration with hand cleanup (Path B)
+
+**Status**: Decided. Supersedes the "2D realism (painted)" decision above.
+
+**Context**: 2D painted realism requires a contracted illustrator (~$5-25k) and is incompatible with bootstrap budget. We evaluated three alternatives: pixel art (Path A), AI-generated stylized illustration with hand cleanup (Path B), and AI-generated painted with cleanup (Path C). User chose Path B.
+
+**Decision**: AI-generated stylized illustration (D&D sourcebook / Inscryption-adjacent feel) with **mandatory hand cleanup on every shipped asset**. Tools:
+- Generation: Midjourney subscription (or local Stable Diffusion).
+- Cleanup: Krita and Photopea (free).
+- Hardware: Wacom Intuos S tablet (~$80, one-time).
+- Total tooling cost: ~$440 over project lifetime.
+
+Estimated cleanup workload: ~275 hours total (portraits, ability icons, artifact icons, monster portraits, biome backgrounds), spread over ~18 months at ~15 hrs/month — well inside the 40-hour weekly cap.
+
+**Rationale**:
+- Preserves D&D-feeling aesthetic (sourcebook / tabletop tonal connection) much better than pixel art.
+- Solo-doable with AI assistance handling composition, anatomy, color; user does the disciplined cleanup that determines final quality.
+- Total tooling cost fits comfortably inside bootstrap budget.
+
+**Trade-offs**:
+- **Steam requires AI disclosure** in the store listing's "AI Generated Content" field. Hiding it is not an option.
+- **TTRPG/D&D audience is the most AI-art-skeptical audience on Steam**, and we are targeting that audience. Review-bomb risk is real.
+- Cleanup discipline is the key risk mitigation. Each asset must look hand-touched, not raw-AI. Cleanup hours are not optional.
+- Style consistency across hundreds of assets is hard with AI tools that update over time. Strict prompt template + style guide is essential.
+
+**Revisit if**: Steam policy on AI content tightens further; review-bomb response to demo overwhelms cleanup discipline; or wishlist conversion suggests audience tolerance is materially different from expected.
+
+---
+
+## 2026-05-08 — Audio direction: royalty-free + one commissioned theme; no voice acting
+
+**Status**: Decided. Supersedes original audio direction (original orchestral score, contracted voice actor).
+
+**Context**: Contracted composer ($3-15k) and voice actor ($1.5-6k) are incompatible with bootstrap budget. Need an audio plan that fits <$500 total.
+
+**Decision**:
+- **Music**: Primary soundtrack curated from royalty-free orchestral sources (Kevin MacLeod / incompetech.com, FreePD, Pixabay Music, Tabletop Audio commercial-licensed tracks). One signature theme commissioned at ~$300 from a music school student or low-end AirGigs composer for the title screen / boss theme.
+- **Voice**: Cut entirely. All narration is text-only with stylized parchment overlay. The "DM voice" as imagined in the original docs is removed from the design.
+- **SFX**: Freesound.org (CC0 only, license-verified), Audacity (free) for editing. Custom dice-clack recording with phone + Audacity ($0).
+
+Total audio budget: ~$300-400.
+
+**Rationale**:
+- Slay the Spire (our primary touchstone) ships with no narrative voice acting and players love it; text-only narration is not a compromise relative to our reference game.
+- Royalty-free orchestral has improved significantly in availability and quality; sufficient variety exists for a D&D-feeling soundtrack.
+- Removing voice acting eliminates an entire production track (casting, scheduling, recording, mixing, retakes).
+
+**Trade-offs**:
+- Loses the "DM voice" atmospheric goal. Text-only narration carries less emotional weight than voiced delivery.
+- Royalty-free orchestral lacks the cohesion of a single composer's full original score. Curation discipline matters.
+- Cannot use AI-generated music or voice in shipped product (still excluded under the revised AI rule — see separate decision below).
+
+**Revisit if**: Demo wishlist conversion funds a contracted composer pre-launch ($3-5k for ~30 minutes of original score is achievable at higher wishlist counts).
+
+---
+
+## 2026-05-08 — Narration: text-only forever; no voice acting in shipped product
+
+**Status**: Decided. Supersedes the original "sparse DM narration" via voice actor.
+
+**Context**: Voice acting (~$1.5-6k for ~200 lines) is incompatible with bootstrap budget. Considered cheap VA via Reddit/Discord, AI voice (ElevenLabs), and text-only options.
+
+**Decision**: All narration is **text-only**, displayed in a stylized parchment overlay at narration trigger moments (run start, first crit, boss intros, deaths, mythic artifact pickups, comeback saves, long combo chains). **No voice acting in shipped product, ever** — including post-launch updates and any future DLC.
+
+**Rationale**:
+- Slay the Spire's narrative content is text-only and players love it; this is not a compromise relative to our primary touchstone.
+- Removes an entire production track (casting, recording, mixing, scheduling).
+- Eliminates voice continuity risk if a VA becomes unavailable mid-project or post-launch.
+- AI voice was considered and rejected: voice AI is currently the most contentious AI category for player sentiment, and the rule revision keeps AI voice off-limits.
+
+**Trade-offs**:
+- Less atmospheric weight on dramatic moments (boss intros, death lines).
+- Mitigation: invest the saved budget/time in stylized parchment animation, sound design (parchment unfurling SFX), and writing quality.
+
+**Revisit if**: A passion VA contributor offers their work for free or at a deeply nominal rate AND the user is willing to take on the production overhead. Otherwise this decision is permanent.
+
+---
+
+## 2026-05-08 — Launch scope: 12 classes, 2 biomes, with post-launch content roadmap
+
+**Status**: Decided. Tightens but does not supersede the original 12-class roster (which stays); supersedes the 4-biome launch.
+
+**Context**: Tightening launch scope to fit bootstrap timeline and budget. Original launch was 12 classes + 4 biomes. Evaluated cuts of 6, 8, 10, or 12 launch classes, and 2 or 3 launch biomes. The Claude-assisted authoring rate makes class authoring much cheaper than originally estimated; biome cuts save more art and balance work than class cuts.
+
+**Decision**:
+- **Launch with all 12 classes**, including Druid (Wild Shape) and Ranger (companion pet).
+- **Launch with 2 biomes**: The Forgotten Crypt + The Sunken Halls.
+- **Post-launch free updates** ship the remaining 2 biomes: Ember Reach (year 1 update) and Astral Vault (year 1-2 update).
+- **Launch target shifts** from 16-18 months to ~18-20 months to absorb Druid/Ranger subsystem engineering.
+
+**Rationale**:
+- Class count is the marketing headline pitch ("12 classes"). Cutting damages the pitch significantly.
+- Biome cuts save substantially more work than class cuts (~30 fewer monsters, 2 fewer bosses, ~80-120 hrs of art cleanup) without weakening the marketing pitch.
+- Druid and Ranger introduce new combat subsystems beyond just class-level mechanics; they need real architecture work but are doable with Claude doing the heavy lifting.
+- Post-launch biome drops become the Year 1 content cadence, supporting sustained engagement after launch.
+
+**Trade-offs**:
+- Complete-run length drops from 4 biomes (~120-150 minutes) to 2 biomes (~70 minutes). Still within roguelike norms but shorter than the original ambition.
+- Post-launch development requires sustained user motivation and ideally launch revenue. If launch underperforms, biomes 3-4 may slip further.
+- Druid and Ranger subsystem risk is real; if either becomes unmanageable, contingency is shipping that class as a post-launch update instead.
+
+**Revisit if**: Druid or Ranger architecture proves intractable for solo+Claude development — pull either to post-launch and reduce launch classes accordingly. Or if biome 1-2 production tracking shows >2x the expected pace, biome 3 (Ember Reach) could be added back to launch scope.
+
+---
+
+## 2026-05-08 — Revised AI-content rule: AI art permitted in shipped product with cleanup + disclosure
+
+**Status**: Decided. Supersedes the original "Never ship AI-generated content as final art, music, or voice in a commercial release" rule in VIBE_CODING.md.
+
+**Context**: The original blanket "never ship AI as final" rule conflicts directly with Path B (AI-generated art with hand cleanup). Need a revised rule that protects the original spirit (don't ship raw AI slop, be honest with players) while permitting the specific bootstrap-feasible workflow.
+
+**Decision**: Revise the rule in `VIBE_CODING.md` as follows:
+
+> **AI-generated content may appear in shipped product ONLY when:**
+> 1. Every asset has substantial hand cleanup with documented process (cleanup is what determines final quality).
+> 2. The Steam store page discloses AI use prominently and accurately, per Steam's required "AI Generated Content" field.
+> 3. We maintain a public "How this art was made" statement on the project website / Discord, explaining the workflow honestly.
+>
+> **AI-generated music and AI-generated voice remain off-limits in shipped product.** These categories carry higher community sensitivity and weaker cleanup options. Royalty-free music + commissioned signature theme + text-only narration are the alternatives.
+
+**Rationale**:
+- Original rule was written assuming a contractor-funded production model. Bootstrap reality requires a different rule.
+- The revised rule keeps the *spirit* of the original (don't ship raw slop, be transparent with players) while permitting the specific feasible path.
+- AI music/voice exclusions match where community sentiment is most negative and where royalty-free / text alternatives are strongest.
+
+**Trade-offs**:
+- Some philosophical purity lost. The user accepts AI tooling in shipped product where previously the answer was a flat no.
+- Reputational risk in TTRPG audience that is particularly anti-AI-art (mitigated by cleanup discipline + transparency).
+- This rule may need re-tightening if Steam policy changes or community response is severe.
+
+**Revisit if**: Steam tightens AI policy in a way that makes disclosure a liability; or audience response makes AI-shipped art untenable for our specific genre.
+
+---
+
 ## Open questions (not yet decided)
 
 These need to be revisited as the slice progresses:
 
 1. **Final game name**: "Hoardseeker" is the working name. Should we trademark/domain-grab now? Probably yes, but verify availability before committing publicly.
-2. **Composer**: Find and contract by month 8. Get demo tracks during Phase 2 if possible.
-3. **Voice actor for narrator**: Find by month 9. Need ~200 lines recorded by month 12.
-4. **Illustrator**: Find by month 6. Earlier if budget allows. AI-only-art is a fallback.
-5. **Publisher target**: Approach Playstack, Future Friends, Hooded Horse around month 12-13. Have demo + Steam page metrics + clear launch plan ready.
-6. **Pricing**: $19.99 is the working number. Validate vs. Slay the Spire ($24.99), Balatro ($14.99), Inscryption ($19.99). Probably right.
-7. **Demo length**: How much of the game does the demo show? Probably 2 floors + 1 elite + 1 mini-boss, capped at ~15 minutes per attempt. Decide by Phase 5.
+2. **Commissioned signature theme composer**: Source for the one ~$300 signature theme (title screen / boss). Likely AirGigs lower tier, music school program, or solo composer on Reddit r/composer. Decide by month 8.
+3. **Publisher target**: Approach Playstack, Future Friends, Hooded Horse around month 12-13. Have demo + Steam page metrics + clear launch plan ready. Less critical now under bootstrap mode — self-publish on Steam is the realistic baseline.
+4. **Pricing**: $19.99 is the original working number. Bootstrap-mode production might support a lower launch price ($14.99) to compete with Balatro / Inscryption pricing tier and reflect the more modest production. Validate against demo reception. Decide by month 14.
+5. **Demo length**: How much of the game does the demo show? Probably 2 floors + 1 elite + 1 mini-boss, capped at ~15 minutes per attempt. Decide by Phase 5.
+
+### Closed questions (resolved by 2026-05-08 bootstrap realignment)
+
+- ~~Composer for full original score~~ — Replaced with royalty-free curation + one commissioned signature theme. See "Audio direction" decision.
+- ~~Voice actor for DM narrator~~ — Cut entirely. See "Narration: text-only forever" decision.
+- ~~Illustrator for full launch art~~ — Replaced with AI-generated art + hand cleanup workflow. See "Art direction: Path B" decision.

@@ -26,7 +26,7 @@ If the answer is yes, we expand to full vision. If the answer is no, we iterate 
 - **Map system**: branching node map (Slay the Spire-style)
 - **Loot system**: gold + risk currency, basic shop, artifact rewards
 - **Run loop**: roll character → enter dungeon → fight through 10 floors → boss → die or win → unlock screen → run it back
-- **Sparse DM narration**: 4 hardcoded narration moments (run start, first crit, boss intro, death/victory)
+- **Sparse text-only DM narration**: 4 hardcoded narration moments (run start, first crit, boss intro, death/victory) displayed in stylized parchment overlay. No voice acting.
 - **Daily seed leaderboard**: Steam Leaderboards integration, Steam-only, no anti-cheat yet
 - **Save/load**: in-progress runs survive crashes
 - **Settings menu**: audio, visuals, key binds
@@ -56,7 +56,7 @@ If the answer is yes, we expand to full vision. If the answer is no, we iterate 
 >
 > **Character creation (15 seconds)**: Roll 4d6 drop lowest, six times, for stats. Reroll allowed once. Pick "Fighter" — only class available. Character portrait appears (one of 3 randomized appearances). Name auto-generates ("Aric the Bold") with rename option.
 >
-> **DM narrates** (sparse, ~10 seconds): *"The Forgotten Crypt has not seen the living for a thousand years. Until tonight."*
+> **Parchment overlay reveals** (sparse, ~5 seconds with ink-scratch SFX): *"The Forgotten Crypt has not seen the living for a thousand years. Until tonight."*
 >
 > **Map view**: Slay the Spire-style branching map. 10 floors. Player picks a path.
 >
@@ -74,7 +74,7 @@ If the answer is yes, we expand to full vision. If the answer is no, we iterate 
 >
 > **Floors 6-9**: Harder combat, more interesting builds emerging. Player accumulates 3 artifacts that synergize.
 >
-> **Floor 10**: Boss approach. **DM narrates**: *"The Lich King's bone throne creaks as you enter. He has waited a thousand years for this fight. He hopes you will be more interesting than the last."*
+> **Floor 10**: Boss approach. **Parchment overlay**: *"The Lich King's bone throne creaks as you enter. He has waited a thousand years for this fight. He hopes you will be more interesting than the last."*
 >
 > Boss fight. Multiple phases. Player wins with 6 HP.
 >
@@ -146,7 +146,7 @@ If this experience is fun, the game is fun. If it's not, the game isn't.
 - All 15 artifacts authored
 - All 12 monsters authored, with AI behaviors
 - Boss encounter (Lich King) with phases
-- 4 DM narration moments hooked up
+- 4 DM narration moments hooked up (text-only parchment overlay; no voice acting per `DECISIONS.md`)
 - Save/load mid-run
 - Settings menu
 - Title screen, credits

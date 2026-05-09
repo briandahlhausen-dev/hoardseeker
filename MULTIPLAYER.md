@@ -155,15 +155,18 @@ A small backend service for:
 - **Save game storage** (Steam Cloud handles it)
 - **Voice chat** (we don't have it; if added later, Steam handles it)
 
-### Stack recommendation
+### Stack recommendation (bootstrap-mode default)
 
-- **Backend**: Go or Rust service. Stateless API workers, replay validators run as background jobs.
-- **Database**: PostgreSQL for accounts and leaderboards. Redis for active session caching.
-- **Hosting**: A single VPS or Fly.io / Railway deployment is sufficient through 100k DAU. No need to over-engineer.
-- **Replay validation**: a headless Godot binary running command logs through the simulation. Can horizontal-scale as a worker pool if validation queue grows.
-- **Cost target**: <$200/month for first year. <$1k/month at 100k DAU.
+Under bootstrap mode, the goal is **$0/month while building, free tier through closed beta, paid tier only if scale demands it**.
 
-A single-developer-friendly option: **Supabase** (managed Postgres + auth + edge functions) for persistence + a small replay-validator worker on Fly.io. Total stack one person can operate.
+- **Bootstrap baseline**: **Supabase free tier** (managed Postgres + auth + edge functions) handles auth, profiles, leaderboards, and telemetry up to ~50k MAU. No backend code to write or host.
+- **Replay validation**: a headless Godot binary running command logs through the simulation. Initially run on the user's local dev machine batch-style; later as a Fly.io free-tier or Railway free-tier worker if validation queue grows.
+- **Database**: Postgres (Supabase-managed). Redis is *only* added if active-session caching becomes a real bottleneck.
+- **Cost target under bootstrap**: $0/month through closed beta. ~$25/month (Supabase Pro) only if free tier limits hit. <$200/month at 100k DAU. <$1k/month at 1M DAU.
+
+The single-developer-friendly path: **Supabase free tier + Fly.io free-tier replay validator** — total stack one person can operate at zero cost during pre-launch.
+
+Backend service in Go or Rust is **deferred** unless Supabase free-tier limits force a self-hosted alternative. Most indie roguelikes never need to graduate beyond managed services.
 
 ### API endpoints (rough)
 
