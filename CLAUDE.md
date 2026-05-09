@@ -134,13 +134,19 @@ The user is non-technical and may not know what tools or services exist. When yo
 
 > Updated at end of every session. Empty if nothing in flight. Read first thing on session start.
 
-**Last updated**: 2026-05-08 (end of bootstrap-realignment session)
+**Last updated**: 2026-05-08 (end of session — full week-1 wrap)
 
-- **What we were working on**: Bootstrap budget realignment — pivoted the project from contractor-driven production (~$10-50k assumed) to bootstrap mode (<$5k total). Updated 10 design docs to reflect new production model, scope, and AI-content rule.
-- **Where we paused**: All bootstrap-realignment changes merged to `main`. `SESSION_PROTOCOL.md` added on its own branch as a separate alignment fix (likely merged by the time you read this).
-- **What needs to happen first when we resume**: Confirm the user's next priority. Plausible candidates (per the bootstrap-realignment session wrap-up):
-  1. **Phase 0 setup** — scaffold the Godot project skeleton in `hoardseeker/` per `ARCHITECTURE.md` (folders, `.tres` base classes, test runner).
-  2. **Style guide locking** — start AI generation experiments to lock 3-5 north-star reference pieces and write `assets/STYLE_GUIDE.md`.
-  3. **Tooling check** — verify Godot 4 install, decide on code editor (VS Code likely), confirm GitHub remote setup.
-- **Any blockers**: None. User is ready to pick up wherever they want.
-- **Branch / files involved**: `main` is current. Branch `bootstrap-realignment` is merged and deleted. `SESSION_PROTOCOL.md` was added on `add-session-protocol` branch.
+- **What we were working on**: Project realignment + foundation. Three things in sequence: (1) bootstrap budget realignment across 10 design docs, (2) installed `SESSION_PROTOCOL.md` for cross-session discipline + LICENSE + README, (3) tooling check + GitHub remote setup.
+- **Where we paused**: Clean session end. Everything merged to `main` and pushed to `origin/main` (https://github.com/briandahlhausen-dev/hoardseeker). Working tree clean. Project is now properly tracked, backed up to GitHub + OneDrive, and Godot is invokable as `godot` command.
+- **What needs to happen first when we resume**:
+  1. **Phase 0 project scaffold** (recommended, ~2-3 hours focused) — Godot folder structure in `hoardseeker/` per `ARCHITECTURE.md`, base classes (`RNGService`, `GameState`, `Command`), test runner, first determinism test. This is the natural next milestone.
+  2. **LLC formation** (optional, parallel admin task) — Month 1-2 priority per `VIBE_CODING.md`. Low-engagement, can be done alongside coding work.
+  3. **Style guide locking** (premature; defer) — Month 4-6 work per the decision calendar.
+- **Any blockers**: None. Ready to pick up wherever the user wants.
+- **Open admin items** (not blocking, just tracked):
+  - LLC formation pending (Month 1-2)
+  - Wacom tablet purchase pending (when art cleanup begins, ~Month 4-6)
+  - Hoardseeker - Copy folder on Desktop (legacy, user to decide whether to archive/delete)
+  - Pricing decision (~$14.99 vs $19.99) deferred to ~Month 14 per DECISIONS.md
+- **Branch / files involved**: `main` is current and pushed. All session branches merged and deleted. Companion files `RECAPS.md` and `TECH_DEBT.md` now exist. `IDEAS.md` not yet created (no entries yet).
+- **Ritual reminder**: User's `RECAPS.md` entry for 2026-05-08 has the "How I felt" line left blank. They can fill it in any time by telling Claude what to add.
