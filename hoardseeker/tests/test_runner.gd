@@ -29,6 +29,11 @@ func _init() -> void:
 	var rng_test: Object = rng_script.new()
 	total_failures.append_array(_run("RNG determinism", rng_test))
 
+	test_count += 1
+	var gs_script: Script = load("res://tests/test_game_state_serialization.gd")
+	var gs_test: Object = gs_script.new()
+	total_failures.append_array(_run("GameState serialization", gs_test))
+
 	# --- Summary ---
 	print("================================================================")
 	if total_failures.is_empty():
