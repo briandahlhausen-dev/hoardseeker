@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(godot --version)",
+      "Bash(godot --headless --quit)",
+      "Bash(godot --headless --import)",
+      "Bash(godot --headless --import || true)",
+      "Bash(godot --headless --script tests/test_runner.gd)",
+      "Bash(bash tests/run.sh)",
+      "Bash(tasklist)",
+      "Bash(tasklist *)",
+      "mcp__mcp-registry__search_mcp_registry",
+      "mcp__mcp-registry__list_connectors",
+      "mcp__mcp-registry__suggest_connectors"
+    ]
+  }
+}

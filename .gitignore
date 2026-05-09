@@ -19,8 +19,10 @@ desktop.ini
 *.swp
 *.swo
 
-# Claude Code session state (local only, not project state)
-.claude/
+# Claude Code state — ignore the directory by default but commit the
+# project-shared settings.json. settings.local.json stays out (per-machine).
+.claude/*
+!.claude/settings.json
 
 # Build / export artifacts
 /builds/
