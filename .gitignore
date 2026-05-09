@@ -1,0 +1,42 @@
+# Godot 4+ specific
+.godot/
+/android/
+*.translation
+
+# Imported assets cache
+.import/
+
+# OS-specific
+.DS_Store
+Thumbs.db
+desktop.ini
+*~
+.directory
+
+# Editor / tooling
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Claude Code session state (local only, not project state)
+.claude/
+
+# Build / export artifacts
+/builds/
+/exports/
+*.pck
+*.zip
+*.exe
+*.dmg
+*.apk
+*.ipa
+
+# Logs and crash dumps
+*.log
+*.dmp
+
+# Local environment overrides
+.env
+.env.local
+override.cfg
