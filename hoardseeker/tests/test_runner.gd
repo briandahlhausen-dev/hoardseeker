@@ -34,6 +34,11 @@ func _init() -> void:
 	var gs_test: Object = gs_script.new()
 	total_failures.append_array(_run("GameState serialization", gs_test))
 
+	test_count += 1
+	var attack_script: Script = load("res://tests/test_attack_command.gd")
+	var attack_test: Object = attack_script.new()
+	total_failures.append_array(_run("AttackCommand", attack_test))
+
 	# --- Summary ---
 	print("================================================================")
 	if total_failures.is_empty():
