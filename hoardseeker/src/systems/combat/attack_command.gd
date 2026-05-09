@@ -17,10 +17,11 @@
 ##   5. On hit: roll damage dice, subtract from target.hp
 ##   6. Always: subtract ap_cost from attacker.action_points
 ##
-## Damage stats are stored directly on the command for now. When AbilityDef
-## resources exist, AttackCommand will hold an ability_id and look up the
-## stats via state.find_ability(). Until then, the caller passes the stats
-## in directly. See ARCHITECTURE.md for the eventual ability-lookup pattern.
+## Damage stats are stored directly on the command instance — AttackCommand
+## is the raw-attack primitive. For ability-driven attacks (where stats live
+## in an AbilityDef .tres), use UseAbilityCommand instead. AttackCommand
+## remains useful for cases without a formal AbilityDef, e.g. monster basic
+## attacks where the stats come from MonsterDef rather than AbilityDef.
 ##
 ## Knows about: GameState, GameEvent, RNGService (via state). Treats
 ##              attacker / target as untyped Resources (duck-typed).
