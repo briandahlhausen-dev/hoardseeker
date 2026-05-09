@@ -2,7 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [main]
+    # 'add-ci' is here temporarily so we can iterate on the workflow itself
+    # before merging to main. Remove it from this list when merging.
+    branches: [main, add-ci]
   pull_request:
     branches: [main]
   # Allow manual runs from the Actions tab for debugging
