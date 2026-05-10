@@ -32,6 +32,15 @@ class_name AbilityDef extends Resource
 # === Cost ===
 @export var ap_cost: int = 1
 
+# === Targeting ===
+## Number of distinct targets the ability requires. Default 1 (single-target).
+## Cleave-style abilities set this to 2; future "all enemies in zone" abilities
+## will need a richer mechanism (see IDEAS.md when that question lands).
+##
+## UseAbilityCommand validates that the caller supplied exactly target_count
+## target_ids; mismatched counts are rejected.
+@export var target_count: int = 1
+
 # === Attack roll ===
 ## Bonus added to the d20 attack roll (negative values valid for risk-taking abilities).
 @export var attack_modifier: int = 0

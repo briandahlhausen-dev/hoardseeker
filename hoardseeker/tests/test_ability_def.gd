@@ -19,6 +19,8 @@ extends RefCounted
 const AbilityDef = preload("res://src/content/abilities/ability_def.gd")
 
 const FIGHTER_SLASH_PATH := "res://src/content/abilities/fighter_slash.tres"
+const FIGHTER_CLEAVE_PATH := "res://src/content/abilities/fighter_cleave.tres"
+const FIGHTER_POWER_STRIKE_PATH := "res://src/content/abilities/fighter_power_strike.tres"
 
 
 func run_tests() -> Array[String]:
@@ -27,6 +29,9 @@ func run_tests() -> Array[String]:
 	failures.append_array(_test_fighter_slash_tres_loads())
 	failures.append_array(_test_fighter_slash_canonical_stats())
 	failures.append_array(_test_load_via_resource_loader_exists())
+	failures.append_array(_test_fighter_cleave_canonical_stats())
+	failures.append_array(_test_fighter_power_strike_canonical_stats())
+	failures.append_array(_test_target_count_defaults_to_one())
 	return failures
 
 
@@ -98,3 +103,63 @@ func _test_load_via_resource_loader_exists() -> Array[String]:
 	if ResourceLoader.exists("res://src/content/abilities/this_ability_does_not_exist.tres"):
 		failures.append("resource_loader: ResourceLoader.exists() should be false for a fictional ability id")
 	return failures
+
+
+# fighter_cleave.tres: 2 AP, two adjacent enemies, 1d8 each per CONTENT.md.
+# This is the canonical multi-target ability; target_count=2 is what makes
+# it different from a copy of slash.
+func _test_fighter_cleave_canonical_stats() -> Array[String]:
+	var def: AbilityDef = load(FIGHTER_CLEAVE_PATH) as AbilityDef
+	var failures: Array[String] = []
+	if def == null:
+		failures.append("cleave: fighter_cleave.tres failed to load as AbilityDef")
+		return failures
+	if def.id != "fighter_cleave":
+		failures.append("cleave: id should be 'fighter_cleave', got '%s'" % def.id)
+	if def.ap_cost != 2:
+		failures.append("cleave: ap_cost should be 2, got %d" % def.ap_cost)
+	if def.target_count != 2:
+		failures.append("cleave: target_count should be 2 (the whole point), got %d" % def.target_count)
+	if def.damage_dice_count != 1:
+		failures.append("cleave: damage_dice_count should be 1, got %d" % def.damage_dice_count)
+	if def.damage_dice_sides != 8:
+		failures.append("cleave: damage_dice_sides should be 8, got %d" % def.damage_dice_sides)
+	if def.attack_modifier != 0:
+		failures.append("cleave: attack_modifier should be 0, got %d" % def.attack_modifier)
+	return failures
+
+
+# fighter_power_strike.tres: 2 AP, single target, 1d12 damage, +2 attack
+# per CONTENT.md. This is the proof point that adding a single-target
+# ability is just a .tres — no code change required for the data path.
+func _test_fighter_power_strike_canonical_stats() -> Array[String]:
+	var def: AbilityDef = load(FIGHTER_POWER_STRIKE_PATH) as AbilityDef
+	var failures: Array[String] = []
+	if def == null:
+		failures.append("power_strike: fighter_power_strike.tres failed to load")
+		return failures
+	if def.id != "fighter_power_strike":
+		failures.append("power_strike: id should be 'fighter_power_strike', got '%s'" % def.id)
+	if def.ap_cost != 2:
+		failures.append("power_strike: ap_cost should be 2, got %d" % def.ap_cost)
+	if def.target_count != 1:
+		failures.append("power_strike: target_count should be 1, got %d" % def.target_count)
+	if def.damage_dice_count != 1:
+		failures.append("power_strike: damage_dice_count should be 1, got %d" % def.damage_dice_count)
+	if def.damage_dice_sides != 12:
+		failures.append("power_strike: damage_dice_sides should be 12, got %d" % def.damage_dice_sides)
+	if def.attack_modifier != 2:
+		failures.append("power_strike: attack_modifier should be 2 (the +2 to-hit is the point), got %d" % def.attack_modifier)
+	return failures
+
+
+# fighter_slash.tres pre-dates target_count and doesn't set it explicitly.
+# The default of 1 must apply on load — otherwise existing single-target
+# abilities silently break the moment target_count is read.
+func _test_target_count_defaults_to_one() -> Array[String]:
+	var def: AbilityDef = load(FIGHTER_SLASH_PATH) as AbilityDef
+	if def == null:
+		return ["target_count_default: fighter_slash.tres failed to load"]
+	if def.target_count != 1:
+		return ["target_count_default: fighter_slash should default to target_count=1 (the .tres pre-dates the field), got %d" % def.target_count]
+	return []
