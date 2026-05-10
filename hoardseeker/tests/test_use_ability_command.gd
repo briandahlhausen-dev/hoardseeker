@@ -42,6 +42,14 @@ func run_tests() -> Array[String]:
 	failures.append_array(_test_apply_emits_dice_rolled_with_ability_tag())
 	failures.append_array(_test_apply_deterministic_with_seed())
 	failures.append_array(_test_integration_lands_a_hit_through_processor())
+	# Multi-target coverage (chunk 5)
+	failures.append_array(_test_multi_target_factory_constructs_command())
+	failures.append_array(_test_validate_fails_target_count_mismatch_too_few())
+	failures.append_array(_test_validate_fails_target_count_mismatch_too_many())
+	failures.append_array(_test_validate_fails_one_of_two_targets_dead())
+	failures.append_array(_test_cleave_apply_decrements_ap_only_once())
+	failures.append_array(_test_cleave_apply_emits_per_target_events())
+	failures.append_array(_test_cleave_apply_deterministic())
 	return failures
 
 
@@ -211,3 +219,170 @@ func _test_integration_lands_a_hit_through_processor() -> Array[String]:
 			if evt.event_type == "DAMAGE_DEALT" and evt.data.get("ability") == "fighter_slash":
 				return []
 	return ["integration: 29 seeds vs AC 13 produced zero hits — suspicious"]
+
+
+# Build a fight with a fighter and TWO skeletons, for cleave-style coverage.
+# Mirrors _make_state but with multi-monster encounter and known_abilities
+# defaulting to fighter_cleave so callers don't have to repeat it.
+func _make_multi_state(
+	attacker_ap: int = 3,
+	skel_hp: int = 12,
+	known_abilities: Array[String] = ["fighter_cleave"],
+	seed_val: int = 42,
+) -> GameState:
+	var gs: GameState = GameState.new()
+	gs.seed = seed_val
+	gs.rng = RNGService.new(seed_val)
+	gs.event_log = EventLog.new()
+	gs.event_log.seed = seed_val
+
+	var fighter: PlayerState = PlayerState.new()
+	fighter.actor_id = "fighter_1"
+	fighter.hp = 20
+	fighter.max_hp = 20
+	fighter.ac = 16
+	fighter.action_points = attacker_ap
+	fighter.max_action_points = 3
+	fighter.ability_ids = known_abilities
+	gs.players.append(fighter)
+
+	gs.current_encounter = EncounterState.new()
+	for actor_id in ["skel_1", "skel_2"]:
+		var skel: MonsterState = MonsterState.new()
+		skel.actor_id = actor_id
+		skel.monster_id = "skeleton_warrior"
+		skel.hp = skel_hp
+		skel.max_hp = max(skel_hp, 1)
+		skel.ac = 13
+		gs.current_encounter.monsters.append(skel)
+
+	return gs
+
+
+# The static factory builds a UseAbilityCommand with N target_ids without
+# using the single-target back-compat ctor. This is the path multi-target
+# callers will use.
+func _test_multi_target_factory_constructs_command() -> Array[String]:
+	var cmd: UseAbilityCommand = UseAbilityCommand.multi_target(
+		"fighter_1", "fighter_cleave", ["skel_1", "skel_2"]
+	)
+	var failures: Array[String] = []
+	if cmd.actor_id != "fighter_1":
+		failures.append("multi_factory: actor_id wrong, got '%s'" % cmd.actor_id)
+	if cmd.ability_id != "fighter_cleave":
+		failures.append("multi_factory: ability_id wrong, got '%s'" % cmd.ability_id)
+	if cmd.target_ids.size() != 2:
+		failures.append("multi_factory: expected 2 target_ids, got %d" % cmd.target_ids.size())
+	elif cmd.target_ids[0] != "skel_1" or cmd.target_ids[1] != "skel_2":
+		failures.append("multi_factory: target_ids contents wrong: %s" % str(cmd.target_ids))
+	if cmd.command_type != "USE_ABILITY":
+		failures.append("multi_factory: command_type should be USE_ABILITY, got '%s'" % cmd.command_type)
+	return failures
+
+
+# Cleave declares target_count=2; supplying only 1 target must reject at
+# validate. This is what stops the single-target back-compat ctor from
+# accidentally driving a multi-target ability.
+func _test_validate_fails_target_count_mismatch_too_few() -> Array[String]:
+	var state: GameState = _make_multi_state()
+	var cmd: UseAbilityCommand = UseAbilityCommand.new("fighter_1", "fighter_cleave", "skel_1")
+	if cmd.validate(state):
+		return ["target_count_too_few: cleave with 1 target should be rejected (target_count=2)"]
+	return []
+
+
+# Slash declares target_count=1; supplying 2 targets must reject at validate.
+# The opposite mismatch direction.
+func _test_validate_fails_target_count_mismatch_too_many() -> Array[String]:
+	var state: GameState = _make_multi_state(3, 12, ["fighter_slash"])
+	var cmd: UseAbilityCommand = UseAbilityCommand.multi_target(
+		"fighter_1", "fighter_slash", ["skel_1", "skel_2"]
+	)
+	if cmd.validate(state):
+		return ["target_count_too_many: slash with 2 targets should be rejected (target_count=1)"]
+	return []
+
+
+# All declared targets must be alive; if any is dead, validate rejects.
+# The "any" semantic prevents a cleave from "wasting" an attack on a corpse.
+func _test_validate_fails_one_of_two_targets_dead() -> Array[String]:
+	var state: GameState = _make_multi_state()
+	state.find_monster("skel_2").hp = 0
+	var cmd: UseAbilityCommand = UseAbilityCommand.multi_target(
+		"fighter_1", "fighter_cleave", ["skel_1", "skel_2"]
+	)
+	if cmd.validate(state):
+		return ["one_target_dead: cleave should reject when any target is at 0 HP"]
+	return []
+
+
+# Cleave costs 2 AP. apply() must decrement AP by exactly 2, NOT by 4
+# (twice for two targets). This is the "AP cost paid once per command"
+# rule and the easiest invariant to break in a multi-target loop.
+func _test_cleave_apply_decrements_ap_only_once() -> Array[String]:
+	var state: GameState = _make_multi_state(3)
+	var cmd: UseAbilityCommand = UseAbilityCommand.multi_target(
+		"fighter_1", "fighter_cleave", ["skel_1", "skel_2"]
+	)
+	cmd.apply(state)
+	var fighter: PlayerState = state.find_player("fighter_1")
+	if fighter.action_points != 1:
+		return ["cleave_ap: expected AP 1 (3 - 2), got %d" % fighter.action_points]
+	return []
+
+
+# Multi-target apply must emit at least one DICE_ROLLED per target,
+# tagged with the target's id. This is what lets the renderer / replay
+# attribute each roll to a specific enemy.
+func _test_cleave_apply_emits_per_target_events() -> Array[String]:
+	var state: GameState = _make_multi_state(3)
+	var cmd: UseAbilityCommand = UseAbilityCommand.multi_target(
+		"fighter_1", "fighter_cleave", ["skel_1", "skel_2"]
+	)
+	var events: Array[GameEvent] = cmd.apply(state)
+
+	var dice_rolled_targets: Dictionary = {}
+	for evt in events:
+		if evt.event_type == "DICE_ROLLED" and evt.data.has("target"):
+			dice_rolled_targets[evt.data.get("target")] = true
+
+	var failures: Array[String] = []
+	if not dice_rolled_targets.has("skel_1"):
+		failures.append("cleave_events: no DICE_ROLLED tagged target=skel_1")
+	if not dice_rolled_targets.has("skel_2"):
+		failures.append("cleave_events: no DICE_ROLLED tagged target=skel_2")
+	return failures
+
+
+# Same seed + same multi-target sequence = same final HP for both targets
+# and same event-type stream. Multi-target determinism — important
+# because per-target loops can hide subtle ordering bugs.
+func _test_cleave_apply_deterministic() -> Array[String]:
+	var failures: Array[String] = []
+
+	var sa: GameState = _make_multi_state(3, 12, ["fighter_cleave"], 77)
+	var cmda: UseAbilityCommand = UseAbilityCommand.multi_target(
+		"fighter_1", "fighter_cleave", ["skel_1", "skel_2"]
+	)
+	var ea: Array[GameEvent] = cmda.apply(sa)
+
+	var sb: GameState = _make_multi_state(3, 12, ["fighter_cleave"], 77)
+	var cmdb: UseAbilityCommand = UseAbilityCommand.multi_target(
+		"fighter_1", "fighter_cleave", ["skel_1", "skel_2"]
+	)
+	var eb: Array[GameEvent] = cmdb.apply(sb)
+
+	if ea.size() != eb.size():
+		failures.append("cleave_deterministic: event counts differ (a=%d, b=%d)" % [ea.size(), eb.size()])
+		return failures
+
+	for i in ea.size():
+		if ea[i].event_type != eb[i].event_type:
+			failures.append("cleave_deterministic: event %d type differs (a=%s, b=%s)" % [i, ea[i].event_type, eb[i].event_type])
+			break
+
+	if sa.find_monster("skel_1").hp != sb.find_monster("skel_1").hp:
+		failures.append("cleave_deterministic: skel_1 HP differs (a=%d, b=%d)" % [sa.find_monster("skel_1").hp, sb.find_monster("skel_1").hp])
+	if sa.find_monster("skel_2").hp != sb.find_monster("skel_2").hp:
+		failures.append("cleave_deterministic: skel_2 HP differs (a=%d, b=%d)" % [sa.find_monster("skel_2").hp, sb.find_monster("skel_2").hp])
+	return failures

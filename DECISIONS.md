@@ -572,6 +572,39 @@ Total audio budget: ~$300-400.
 
 ---
 
+## 2026-05-10 — UseAbilityCommand carries `target_ids` always; AbilityDef.target_count specifies how many
+
+**Status**: Decided
+
+**Context**: Phase 1 chunk 5 added a second concrete ability (`fighter_cleave`) which fundamentally targets *two* enemies at once. The chunk-3 `UseAbilityCommand` carried a single `target_id: String`. Two reasonable shapes for adding multi-target support:
+
+- (a) Keep `target_id` for single-target. Add a second command type, `UseMultiTargetAbilityCommand`, with `target_ids: Array[String]`. AbilityDef has no targeting field; the *command type* tells you the count.
+- (b) Replace `target_id` with `target_ids: Array[String]` on the existing command. Single-target abilities pass a 1-element array. AbilityDef declares `target_count: int` so validate can catch count mismatches between the command and the data.
+
+**Decision**: Approach (b). One command type, `target_ids` always, `AbilityDef.target_count` as the source of truth for "how many targets does this ability expect."
+
+The single-target convenience constructor `UseAbilityCommand.new(actor, ability, target_id)` wraps a non-empty `target_id` into a 1-element `target_ids` automatically — chunk-3's tests pass unchanged. Multi-target callers use the static factory `UseAbilityCommand.multi_target(actor, ability, target_ids)`.
+
+**Rationale**:
+- One command type means one apply path, one resolution loop, one set of events. Cleave's per-target events look exactly like slash's events tagged with target id.
+- Putting `target_count` on `AbilityDef` (the data) rather than the command type (the code) keeps the rule that "adding a new ability is a `.tres` change, not a code change." A future "stab three goblins" ability is `target_count=3` in a .tres, no new command class.
+- `target_ids.size() != def.target_count` is a simple validate check that catches both directions of mismatch (cleave with 1 target, slash with 2 targets).
+- The single-target back-compat constructor preserves the existing ergonomic API for the 90% case. Most abilities are single-target and shouldn't pay multi-target ergonomic tax.
+
+**Trade-offs**:
+- `target_count` is a fixed integer — no support yet for "1 to N" targets (e.g., a fireball that hits all enemies in a zone, where the count varies with positioning). When that need arrives, expect to add a richer `targeting: String` enum field alongside `target_count`. The current shape doesn't preclude it.
+- Order of `target_ids` matters (events are emitted per target in array order). For abilities where order is irrelevant, callers carry a small ergonomic burden of choosing an order.
+- The static factory is a second construction path, slightly more API surface than a single ctor.
+
+**Load-bearing files**:
+- [src/content/abilities/ability_def.gd](hoardseeker/src/content/abilities/ability_def.gd) — `target_count: int = 1`.
+- [src/systems/combat/use_ability_command.gd](hoardseeker/src/systems/combat/use_ability_command.gd) — `target_ids: Array[String]`, back-compat ctor, `multi_target` factory, per-target resolution loop.
+- [src/content/abilities/fighter_cleave.tres](hoardseeker/src/content/abilities/fighter_cleave.tres) — first multi-target ability, `target_count=2`.
+
+**Revisit if**: An ability needs variable target count (zone effects, "all enemies", "all allies in line"). Replace or augment `target_count` with a `targeting` enum at that point. Or if the per-target apply path needs to differ structurally per ability (e.g., cleave that auto-chains to a third target on kill — at that point a Strategy pattern on AbilityDef may beat the single resolution loop).
+
+---
+
 ## Open questions (not yet decided)
 
 These need to be revisited as the slice progresses:

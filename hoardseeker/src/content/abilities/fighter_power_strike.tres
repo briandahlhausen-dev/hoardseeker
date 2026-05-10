@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AbilityDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/abilities/ability_def.gd" id="1_ability_def"]
+
+[resource]
+script = ExtResource("1_ability_def")
+id = "fighter_power_strike"
+name_string_id = "ability_fighter_power_strike_name"
+description_string_id = "ability_fighter_power_strike_description"
+ap_cost = 2
+target_count = 1
+attack_modifier = 2
+damage_dice_count = 1
+damage_dice_sides = 12
+damage_modifier = 0
