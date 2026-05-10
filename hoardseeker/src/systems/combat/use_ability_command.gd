@@ -224,6 +224,13 @@ func _resolve_attack(
 				damage_total += d
 
 		damage_total = max(0, damage_total)
+
+		# Apply target's resistance for this damage type. Missing key
+		# defaults to 1.0 (no modifier). int() truncates the float
+		# multiplier result; deliberate (no fractional HP).
+		var resistance: float = target.damage_resistances.get(def.damage_type, 1.0)
+		damage_total = max(0, int(damage_total * resistance))
+
 		target.hp = max(0, target.hp - damage_total)
 
 		events.append(GameEvent.new("DAMAGE_DEALT", {
@@ -232,6 +239,7 @@ func _resolve_attack(
 			"ability": ability_id,
 			"amount": damage_total,
 			"crit": is_crit,
+			"damage_type": def.damage_type,
 		}))
 
 		if target.hp <= 0:

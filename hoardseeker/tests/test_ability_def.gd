@@ -36,6 +36,8 @@ func run_tests() -> Array[String]:
 	# Phase C — heal-path coverage on the data side
 	failures.append_array(_test_heal_fields_default_to_zero())
 	failures.append_array(_test_fighter_second_wind_canonical_stats())
+	# Phase F — damage type defaults
+	failures.append_array(_test_damage_type_defaults_to_physical())
 	return failures
 
 
@@ -189,6 +191,28 @@ func _test_heal_fields_default_to_zero() -> Array[String]:
 	var slash: AbilityDef = load(FIGHTER_SLASH_PATH) as AbilityDef
 	if slash.heal_dice_count != 0:
 		failures.append("heal_default: fighter_slash.tres should have heal_dice_count=0, got %d" % slash.heal_dice_count)
+	return failures
+
+
+# damage_type defaults to "physical" for new in-memory AbilityDefs and
+# for existing damage .tres files (which don't set damage_type explicitly).
+# This is the back-compat property — existing damage abilities all stay
+# physical without editing every .tres.
+func _test_damage_type_defaults_to_physical() -> Array[String]:
+	var failures: Array[String] = []
+	var fresh: AbilityDef = AbilityDef.new()
+	if fresh.damage_type != "physical":
+		failures.append("damage_type: fresh AbilityDef should default to 'physical', got '%s'" % fresh.damage_type)
+
+	# Existing damage .tres files (slash, cleave, power_strike) pre-date
+	# damage_type and must inherit the default.
+	for path in [FIGHTER_SLASH_PATH, FIGHTER_CLEAVE_PATH, FIGHTER_POWER_STRIKE_PATH]:
+		var def: AbilityDef = load(path) as AbilityDef
+		if def == null:
+			failures.append("damage_type: failed to load %s" % path)
+			continue
+		if def.damage_type != "physical":
+			failures.append("damage_type: %s should default to 'physical', got '%s'" % [path, def.damage_type])
 	return failures
 
 

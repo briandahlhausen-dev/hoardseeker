@@ -52,6 +52,13 @@ class_name AbilityDef extends Resource
 @export var damage_dice_sides: int = 8
 @export var damage_modifier: int = 0
 
+## Damage type — used by target resistances to compute final damage.
+## Conventional values: "physical", "fire", "cold", "necrotic", "radiant",
+## "poison", etc. Defaults to "physical" so existing damage abilities
+## (slash, cleave, power_strike, all monster basic attacks) remain
+## physical without editing their .tres.
+@export var damage_type: String = "physical"
+
 # === Heal ===
 ## Optional heal payload. When `heal_dice_count > 0` the ability is
 ## treated as a heal — UseAbilityCommand skips the attack roll entirely

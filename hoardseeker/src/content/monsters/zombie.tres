@@ -11,3 +11,6 @@ max_hp = 18
 ac = 11
 max_action_points = 1
 ability_ids = []
+damage_resistances = {
+"physical": 0.5
+}

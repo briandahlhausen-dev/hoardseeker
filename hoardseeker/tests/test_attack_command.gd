@@ -30,6 +30,10 @@ func run_tests() -> Array[String]:
 	failures.append_array(_test_apply_deterministic_with_seed())
 	failures.append_array(_test_apply_can_defeat_target())
 	failures.append_array(_test_apply_emits_hit_or_miss_consistently())
+	# Phase F — damage type + resistance
+	failures.append_array(_test_target_with_resistance_takes_half_damage())
+	failures.append_array(_test_immunity_zeroes_damage_on_hit())
+	failures.append_array(_test_no_resistance_entry_means_full_damage())
 	return failures
 
 
@@ -203,3 +207,98 @@ func _test_apply_emits_hit_or_miss_consistently() -> Array[String]:
 		if hit_count + miss_count != 1:
 			return ["hit_or_miss: seed %d produced %d hits + %d misses (expected exactly one)" % [seed_val, hit_count, miss_count]]
 	return []
+
+
+# --- Phase F: damage type + resistance ---
+
+# When the target has 0.5 resistance to the attack's damage type, the
+# damage applied is half the rolled total (int-truncated). Verified
+# across multiple seeds — find one where the attack hits, compare the
+# DAMAGE_DEALT amount vs an unresisted reference run with the same seed.
+func _test_target_with_resistance_takes_half_damage() -> Array[String]:
+	for seed_val in range(1, 50):
+		# Reference run: target with NO resistance
+		var ref_state: GameState = _make_state(20, 100, 3, 10, seed_val)
+		var ref_cmd: AttackCommand = AttackCommand.new("p1", "p2")
+		var ref_events: Array[GameEvent] = ref_cmd.apply(ref_state)
+		var ref_damage: int = -1
+		for e in ref_events:
+			if e.event_type == "DAMAGE_DEALT":
+				ref_damage = e.data.get("amount", 0)
+				break
+		if ref_damage <= 1:  # need a hit with at least 2 damage so halving is observable
+			continue
+
+		# Resistance run: same seed + same setup, but target resists physical at 0.5
+		var resist_state: GameState = _make_state(20, 100, 3, 10, seed_val)
+		resist_state.find_player("p2").damage_resistances = {"physical": 0.5}
+		var resist_cmd: AttackCommand = AttackCommand.new("p1", "p2")
+		var resist_events: Array[GameEvent] = resist_cmd.apply(resist_state)
+		var resist_damage: int = -1
+		for e in resist_events:
+			if e.event_type == "DAMAGE_DEALT":
+				resist_damage = e.data.get("amount", 0)
+				break
+
+		if resist_damage == -1:
+			return ["resistance_half: seed %d, reference hit but resistance run produced no DAMAGE_DEALT" % seed_val]
+		var expected: int = int(ref_damage * 0.5)
+		if resist_damage != expected:
+			return ["resistance_half: seed %d, expected %d (= %d * 0.5), got %d" % [seed_val, expected, ref_damage, resist_damage]]
+		return []
+	return ["resistance_half: 49 seeds produced no qualifying hits with damage > 1 (suspicious)"]
+
+
+# Resistance multiplier of 0.0 = immunity. Hit lands but damage is 0.
+# DAMAGE_DEALT still fires (with amount 0) so the renderer shows
+# "Immune" rather than no feedback.
+func _test_immunity_zeroes_damage_on_hit() -> Array[String]:
+	for seed_val in range(1, 30):
+		var state: GameState = _make_state(20, 100, 3, 10, seed_val)
+		state.find_player("p2").damage_resistances = {"physical": 0.0}
+		var cmd: AttackCommand = AttackCommand.new("p1", "p2")
+		var events: Array[GameEvent] = cmd.apply(state)
+		# Only check seeds where the attack actually hit
+		var hit: bool = false
+		for e in events:
+			if e.event_type == "DAMAGE_DEALT":
+				hit = true
+				if e.data.get("amount") != 0:
+					return ["immunity: seed %d hit but damage was %d (expected 0 for immunity)" % [seed_val, e.data.get("amount")]]
+				break
+		if hit:
+			# Target HP must be unchanged
+			if state.find_player("p2").hp != 100:
+				return ["immunity: seed %d hit but target HP changed (expected 100, got %d)" % [seed_val, state.find_player("p2").hp]]
+			return []
+	return ["immunity: 29 seeds produced no hits (sample too small or AC too high)"]
+
+
+# Target with NO entry for the attack's damage_type takes full damage.
+# Missing key -> default 1.0 multiplier. This is the back-compat path.
+func _test_no_resistance_entry_means_full_damage() -> Array[String]:
+	for seed_val in range(1, 30):
+		# Target with resistance to a DIFFERENT type than the attack
+		var state: GameState = _make_state(20, 100, 3, 10, seed_val)
+		state.find_player("p2").damage_resistances = {"fire": 0.0}  # immune to fire, but attack is physical
+		var cmd: AttackCommand = AttackCommand.new("p1", "p2")
+		var events: Array[GameEvent] = cmd.apply(state)
+		var damage: int = -1
+		for e in events:
+			if e.event_type == "DAMAGE_DEALT":
+				damage = e.data.get("amount", 0)
+				break
+		if damage > 0:
+			# Compare against a non-resistance run with same seed — should be identical
+			var ref_state: GameState = _make_state(20, 100, 3, 10, seed_val)
+			var ref_cmd: AttackCommand = AttackCommand.new("p1", "p2")
+			var ref_events: Array[GameEvent] = ref_cmd.apply(ref_state)
+			var ref_damage: int = -1
+			for e in ref_events:
+				if e.event_type == "DAMAGE_DEALT":
+					ref_damage = e.data.get("amount", 0)
+					break
+			if damage != ref_damage:
+				return ["no_match: seed %d, fire-immunity should not affect physical damage (ref=%d, with-fire-immunity=%d)" % [seed_val, ref_damage, damage]]
+			return []
+	return ["no_match: 29 seeds produced no hits (sample too small)"]

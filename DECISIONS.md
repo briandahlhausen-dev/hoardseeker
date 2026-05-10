@@ -679,6 +679,54 @@ Plus an ergonomic `UseAbilityCommand.self_target(actor, ability)` factory — su
 
 ---
 
+## 2026-05-10 — Damage types + per-actor resistance dictionaries
+
+**Status**: Decided
+
+**Context**: Phase F needed a way to express zombie's CONTENT.md flavor "high physical resistance" and to set up future damage-typed abilities (fire bolt, necrotic wave, etc.). Three reasonable shapes:
+
+- (a) **`damage_type: String` on the source (AbilityDef + AttackCommand) + `damage_resistances: Dictionary<String, float>` on the target (PlayerState + MonsterState)**. Final damage = rolled damage × `target.damage_resistances.get(damage_type, 1.0)`.
+- (b) **Per-source-and-target damage matrix at a registry level**. e.g. a `DamageInteraction` Resource that holds rules. More extensible, but heavy for an MVP.
+- (c) **Damage-class enums (DAMAGE_PHYSICAL, DAMAGE_FIRE) with hardcoded resistance constants per monster**. Simpler in the short term but hostile to data-driven content authoring (every new damage type means code changes).
+
+**Decision**: Approach (a). Strings for damage types (no enum — keeps the type set extensible without code changes), Dictionary on the actor for resistances (sparse — only types the actor cares about appear), `1.0` default multiplier for missing keys (no resistance), spawn copies the def's resistance dict into the runtime state.
+
+Specifics:
+- `AbilityDef.damage_type: String = "physical"` — default preserves chunk-3/5/C abilities as physical.
+- `AttackCommand.damage_type: String = "physical"` — same default for the raw-attack primitive.
+- `PlayerState.damage_resistances: Dictionary = {}` — empty by default (players have no static resistances yet; equipment/buffs land here later).
+- `MonsterState.damage_resistances: Dictionary = {}` — empty by default; populated from the def at spawn time.
+- `MonsterDef.damage_resistances: Dictionary = {}` — canonical per-def resistances; copied into MonsterState via `spawn_monster_state`.
+- Resolution (in both `AttackCommand.apply` and `UseAbilityCommand._resolve_attack`): `damage = max(0, int(rolled_damage * target.damage_resistances.get(damage_type, 1.0)))`. `int()` truncates fractional results — no fractional HP in the simulation.
+
+`zombie.tres` ships `{"physical": 0.5}` to express the CONTENT.md flavor.
+
+**Rationale**:
+- Strings beat enums for damage types because new types are likely (necrotic, radiant, force, psychic, etc., per D&D), and adding them via .tres should never require a code change. Hard rule #4 in CLAUDE.md.
+- Multipliers (vs. flat reduction) compose cleanly: 0.0 = immunity, 0.5 = resistance, 1.0 = normal, 2.0 = vulnerability. One arithmetic shape covers all four common D&D resistance categories.
+- Dictionary on the actor (vs. table at the registry) means resistance lookups are O(1) and don't require global state. Status effects can mutate `damage_resistances` directly (e.g. a "Resist Fire" buff sets `damage_resistances["fire"] = 0.5` for its duration).
+- Spawn-time copy of MonsterDef.damage_resistances ensures combat-time mutations on one zombie don't leak to other zombies or to the def itself — the same independence pattern as `ability_ids` on MonsterDef.
+
+**Trade-offs**:
+- Strings are typo-prone — `"physcial"` vs `"physical"` would silently skip resistance lookup. Mitigation: tests on canonical .tres files assert the type strings; a lint that scans for the canonical types could be added later.
+- `int()` truncation means odd-valued damage rolls round down with a 0.5 multiplier (5 × 0.5 = 2.5 → 2). D&D 5e rounds down too, so the math matches the design idiom. Documented in the resolution comment.
+- The PlayerState `damage_resistances` field is currently always empty in tests — no class/race/equipment system populates it yet. Tests construct it manually when checking the resistance code path.
+
+**Load-bearing files**:
+- [src/content/abilities/ability_def.gd](hoardseeker/src/content/abilities/ability_def.gd) — `damage_type` field.
+- [src/systems/combat/attack_command.gd](hoardseeker/src/systems/combat/attack_command.gd) — `damage_type` field; resistance lookup in `apply`.
+- [src/systems/combat/use_ability_command.gd](hoardseeker/src/systems/combat/use_ability_command.gd) — resistance lookup in `_resolve_attack`.
+- [src/core/player_state.gd](hoardseeker/src/core/player_state.gd) and [src/core/monster_state.gd](hoardseeker/src/core/monster_state.gd) — `damage_resistances` field.
+- [src/content/monsters/monster_def.gd](hoardseeker/src/content/monsters/monster_def.gd) — `damage_resistances` field; spawn copies it.
+- [src/content/monsters/zombie.tres](hoardseeker/src/content/monsters/zombie.tres) — first .tres with a non-empty resistance entry.
+
+**Revisit if**:
+- Damage interactions become complex enough to need a registry or matrix (e.g., "fire damage on a frozen target deals double" — interactions involving target *state* rather than just resistance multipliers). Move to a Resource-based interaction system.
+- The string-typo risk turns out to bite — add lint or change to enum.
+- Damage-over-time effects (poison) need their own resistance lookup. Currently poison damage in the status-effect tick does NOT apply resistance — captured here as a deliberate scope limit. Add resistance lookup in `_tick_status_effects` "poison" arm if/when it matters.
+
+---
+
 ## Open questions (not yet decided)
 
 These need to be revisited as the slice progresses:
