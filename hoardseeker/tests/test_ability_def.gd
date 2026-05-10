@@ -23,6 +23,7 @@ const FIGHTER_CLEAVE_PATH := "res://src/content/abilities/fighter_cleave.tres"
 const FIGHTER_POWER_STRIKE_PATH := "res://src/content/abilities/fighter_power_strike.tres"
 const FIGHTER_SECOND_WIND_PATH := "res://src/content/abilities/fighter_second_wind.tres"
 const CHAMPION_GREAT_WEAPON_MASTER_PATH := "res://src/content/abilities/champion_great_weapon_master.tres"
+const CHAMPION_CRITICAL_FINISHER_PATH := "res://src/content/abilities/champion_critical_finisher.tres"
 
 
 func run_tests() -> Array[String]:
@@ -41,6 +42,9 @@ func run_tests() -> Array[String]:
 	failures.append_array(_test_damage_type_defaults_to_physical())
 	# Phase G — first Champion subclass ability (pure data add, no architecture)
 	failures.append_array(_test_champion_great_weapon_master_canonical_stats())
+	# Phase H — execute mechanic
+	failures.append_array(_test_execute_fields_default_to_zero())
+	failures.append_array(_test_champion_critical_finisher_canonical_stats())
 	return failures
 
 
@@ -271,4 +275,50 @@ func _test_champion_great_weapon_master_canonical_stats() -> Array[String]:
 	# This ability is pure damage — no heal payload.
 	if def.heal_dice_count != 0:
 		failures.append("gwm: heal_dice_count should be 0 (pure damage ability), got %d" % def.heal_dice_count)
+	return failures
+
+
+# Execute fields default to 0.0 for fresh AbilityDefs and existing
+# damage abilities — the dispatch in UseAbilityCommand requires BOTH
+# threshold > 0 and chance > 0 to enter the execute branch, so these
+# defaults keep all existing abilities on the normal damage path.
+func _test_execute_fields_default_to_zero() -> Array[String]:
+	var failures: Array[String] = []
+	var fresh: AbilityDef = AbilityDef.new()
+	if fresh.execute_threshold_pct != 0.0:
+		failures.append("execute_default: fresh threshold should be 0.0, got %s" % str(fresh.execute_threshold_pct))
+	if fresh.execute_chance != 0.0:
+		failures.append("execute_default: fresh chance should be 0.0, got %s" % str(fresh.execute_chance))
+
+	# Existing damage abilities (not designed as executes) must inherit defaults.
+	for path in [FIGHTER_SLASH_PATH, FIGHTER_CLEAVE_PATH, FIGHTER_POWER_STRIKE_PATH, CHAMPION_GREAT_WEAPON_MASTER_PATH]:
+		var def: AbilityDef = load(path) as AbilityDef
+		if def.execute_threshold_pct != 0.0 or def.execute_chance != 0.0:
+			failures.append("execute_default: %s should have execute fields=0.0, got threshold=%s chance=%s" % [path, str(def.execute_threshold_pct), str(def.execute_chance)])
+	return failures
+
+
+# champion_critical_finisher per CONTENT.md "Champion subclass":
+# "Execute: 50%+ chance to instakill any enemy below 25% HP. 3 AP."
+# This is the first ability with both execute fields populated.
+# Fallback damage is 1d8 — modest payload for when the execute fails.
+func _test_champion_critical_finisher_canonical_stats() -> Array[String]:
+	var def: AbilityDef = load(CHAMPION_CRITICAL_FINISHER_PATH) as AbilityDef
+	var failures: Array[String] = []
+	if def == null:
+		failures.append("finisher: champion_critical_finisher.tres failed to load")
+		return failures
+	if def.id != "champion_critical_finisher":
+		failures.append("finisher: id should be 'champion_critical_finisher', got '%s'" % def.id)
+	if def.ap_cost != 3:
+		failures.append("finisher: ap_cost should be 3, got %d" % def.ap_cost)
+	if def.execute_threshold_pct != 0.25:
+		failures.append("finisher: execute_threshold_pct should be 0.25 (below 25%% HP per CONTENT.md), got %s" % str(def.execute_threshold_pct))
+	if def.execute_chance != 0.5:
+		failures.append("finisher: execute_chance should be 0.5 (50%% per CONTENT.md), got %s" % str(def.execute_chance))
+	# Fallback damage payload — 1d8 if the execute doesn't land.
+	if def.damage_dice_count != 1:
+		failures.append("finisher: damage_dice_count should be 1, got %d" % def.damage_dice_count)
+	if def.damage_dice_sides != 8:
+		failures.append("finisher: damage_dice_sides should be 8 (1d8 fallback), got %d" % def.damage_dice_sides)
 	return failures

@@ -727,6 +727,53 @@ Specifics:
 
 ---
 
+## 2026-05-10 — Execute mechanic: pre-damage HP-threshold + chance, RNG-deterministic regardless of branch
+
+**Status**: Decided
+
+**Context**: Phase H added `champion_critical_finisher` per CONTENT.md ("Execute: 50%+ chance to instakill any enemy below 25% HP. 3 AP."). Three calls had to be made:
+
+1. **When does the threshold check happen — pre-damage or post-damage?**
+   - Pre-damage: target's HP at time of casting determines whether execute is eligible. Predictable, single-pass resolution.
+   - Post-damage: roll attack + damage first, THEN check if target dropped below threshold. Captures "finishing blow" flavor better (your hit weakens them, then you finish).
+
+2. **What happens when the execute roll fails?**
+   - (a) Execute fails → ability does nothing (target safe).
+   - (b) Execute fails → fall through to normal attack/damage flow (graceful fallback).
+
+3. **RNG determinism: should the execute chance roll consume RNG even on the "above threshold, no roll needed" path?**
+   - Yes (always roll if eligibility checked) → RNG stream stays predictable but wastes calls.
+   - No (only roll when eligibility met) → deterministic but the stream advances differently depending on target HP.
+
+**Decision**:
+1. **Pre-damage check.** Simpler, single-pass resolution. The "finishing blow" flavor can be added later by augmenting the dispatch to also check post-damage.
+2. **Fall through to normal damage on execute fail.** Graceful — the ability still does *something* on a failed roll. Otherwise a 50% execute is too feast-or-famine for a 3 AP ability.
+3. **Roll the chance only when threshold is met.** RNG advances iff the execute branch is entered. Deterministic given the same starting state because target HP at cast is part of the state — same starting state always produces the same threshold-met outcome, and same RNG stream from there.
+
+The dispatch is gated by `def.execute_threshold_pct > 0.0 AND def.execute_chance > 0.0` — both must be set for the branch to enter. This means existing damage abilities (slash, cleave, etc., where both fields are 0.0) never enter the execute branch and behave exactly as before.
+
+**Rationale**:
+- Pre-damage check matches the ability's narrative: "Execute *any enemy below 25% HP*" — the condition is checked at the moment of casting, not derived after damage rolls.
+- Fall-through-to-damage means the 3 AP isn't wasted on a missed execute. The ability shape becomes "high-cost finisher with 50% kill chance + 1d8 fallback" rather than "high-cost gamble." The latter is too punishing for the AP investment.
+- Always-roll-when-eligible (vs always-roll-period or never-roll) is the structurally correct middle: RNG stream advances based on game state (HP threshold met), not based on which dispatch path the def routes to. Two states with identical HP and identical RNG seed will produce identical execute outcomes — the determinism contract holds.
+
+**Trade-offs**:
+- Hard-clamping target.hp to 0 on execute success skips the damage roll entirely. If a future ability cares about "damage dealt this turn" totals (achievement triggers, vampire-touch), execute kills won't contribute. Documented in `_resolve_attack` comment.
+- The threshold is a static fraction (`execute_threshold_pct`); abilities can't yet say "execute below 50% if target is poisoned, otherwise below 25%". Conditional thresholds = future need.
+- No lower bound on threshold or chance; an ability could ship `execute_threshold_pct = 1.01` (always eligible) + `execute_chance = 1.0` (always succeeds) which is just "1 AP cost instakill." Trusting designers + .tres review to not author broken abilities; could add lint later.
+
+**Load-bearing files**:
+- [src/content/abilities/ability_def.gd](hoardseeker/src/content/abilities/ability_def.gd) — `execute_threshold_pct`, `execute_chance` fields with `0.0` defaults.
+- [src/systems/combat/use_ability_command.gd](hoardseeker/src/systems/combat/use_ability_command.gd) — pre-damage check at top of `_resolve_attack`. Always-roll-when-eligible RNG pattern.
+- [src/content/abilities/champion_critical_finisher.tres](hoardseeker/src/content/abilities/champion_critical_finisher.tres) — first ability with execute fields populated.
+
+**Revisit if**:
+- The "finishing blow" post-damage flavor is wanted for a later ability — extend dispatch with a `post_damage_execute` mode rather than replacing.
+- Conditional thresholds are needed (e.g., "execute below 50% if poisoned").
+- Damage-dealt totals matter for achievements / lifesteal — execute path needs to credit "damage dealt" appropriately.
+
+---
+
 ## Open questions (not yet decided)
 
 These need to be revisited as the slice progresses:

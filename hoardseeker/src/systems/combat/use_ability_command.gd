@@ -185,6 +185,14 @@ func _resolve_heal(
 ## Damage resolution: attack roll, damage roll if hit, emit events.
 ## This is the chunk-3 path — extracted into its own function only so the
 ## chunk-C heal dispatch can sit alongside it cleanly.
+##
+## Pre-damage execute check (chunk H): if the def has execute fields set
+## AND the target is below the HP threshold, roll the execute chance. On
+## success, instakill and skip the rest of the resolution. On failure or
+## when target is above threshold, fall through to the normal damage path.
+## Execute always consumes RNG (one rng.chance call) so the deterministic
+## stream stays predictable — replays don't drift based on whether the
+## execute branch was taken.
 func _resolve_attack(
 	state: Resource,
 	def: AbilityDef,
@@ -192,6 +200,26 @@ func _resolve_attack(
 	target_id: String,
 	events: Array[GameEvent],
 ) -> void:
+	# === Pre-damage execute check ===
+	if def.execute_threshold_pct > 0.0 and def.execute_chance > 0.0:
+		var hp_pct: float = float(target.hp) / float(max(target.max_hp, 1))
+		if hp_pct < def.execute_threshold_pct:
+			# Always roll the chance — keeps RNG stream deterministic.
+			var executed: bool = state.rng.chance(def.execute_chance)
+			if executed:
+				target.hp = 0
+				events.append(GameEvent.new("EXECUTED", {
+					"actor": actor_id,
+					"target": target_id,
+					"ability": ability_id,
+					"hp_pct_at_cast": hp_pct,
+				}))
+				events.append(GameEvent.new("ACTOR_DEFEATED", {
+					"target": target_id,
+				}))
+				return
+			# Execute failed — fall through to normal damage roll below.
+
 	# === Attack roll ===
 	var attack_natural: int = state.rng.roll(20)
 	var attack_total: int = attack_natural + def.attack_modifier

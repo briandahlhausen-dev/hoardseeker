@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="AbilityDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/abilities/ability_def.gd" id="1_ability_def"]
+
+[resource]
+script = ExtResource("1_ability_def")
+id = "champion_critical_finisher"
+name_string_id = "ability_champion_critical_finisher_name"
+description_string_id = "ability_champion_critical_finisher_description"
+ap_cost = 3
+target_count = 1
+attack_modifier = 0
+damage_dice_count = 1
+damage_dice_sides = 8
+damage_modifier = 0
+damage_type = "physical"
+heal_dice_count = 0
+heal_dice_sides = 0
+heal_modifier = 0
+execute_threshold_pct = 0.25
+execute_chance = 0.5

@@ -60,6 +60,10 @@ func run_tests() -> Array[String]:
 	failures.append_array(_test_second_wind_caps_heal_at_max_hp())
 	failures.append_array(_test_second_wind_emits_healed_event_no_attack_roll())
 	failures.append_array(_test_second_wind_decrements_ap())
+	# Phase H — execute mechanic (champion_critical_finisher)
+	failures.append_array(_test_execute_does_not_trigger_above_threshold())
+	failures.append_array(_test_execute_can_instakill_below_threshold())
+	failures.append_array(_test_execute_fail_falls_through_to_damage())
 	return failures
 
 
@@ -530,3 +534,119 @@ func _test_second_wind_decrements_ap() -> Array[String]:
 	if fighter.action_points != 2:
 		return ["second_wind_ap: expected AP 2 (3 - 1), got %d" % fighter.action_points]
 	return []
+
+
+# --- Phase H: execute mechanic (champion_critical_finisher) ---
+
+# Build a state with a fighter who knows champion_critical_finisher and a
+# skeleton at the specified HP. Fighter starts with 3 AP (matches the
+# ability's 3 AP cost so it can apply once).
+func _make_finisher_state(skel_hp: int, seed_val: int = 42) -> GameState:
+	var gs: GameState = GameState.new()
+	gs.seed = seed_val
+	gs.rng = RNGService.new(seed_val)
+	gs.event_log = EventLog.new()
+	gs.event_log.seed = seed_val
+
+	var fighter: PlayerState = PlayerState.new()
+	fighter.actor_id = "fighter_1"
+	fighter.hp = 20
+	fighter.max_hp = 20
+	fighter.ac = 16
+	fighter.action_points = 3
+	fighter.max_action_points = 3
+	fighter.ability_ids = ["champion_critical_finisher"]
+	gs.players.append(fighter)
+
+	gs.current_encounter = EncounterState.new()
+	# Use the canonical skeleton_warrior def then override HP.
+	const SKELETON_WARRIOR_PATH := "res://src/content/monsters/skeleton_warrior.tres"
+	var def: Resource = load(SKELETON_WARRIOR_PATH)
+	var skel: MonsterState = def.spawn_monster_state("skel_1")
+	skel.hp = skel_hp  # tests pick where on the threshold the target sits
+	gs.current_encounter.monsters.append(skel)
+	return gs
+
+
+# Target above the 25% HP threshold (e.g. 6/12 = 50%): execute branch
+# never enters. Normal damage flow runs. RNG should advance through
+# attack roll + damage roll, NOT the execute chance.
+func _test_execute_does_not_trigger_above_threshold() -> Array[String]:
+	# Skeleton at 6/12 = 50%, well above the 25% threshold
+	var state: GameState = _make_finisher_state(6, 42)
+	var cmd: UseAbilityCommand = UseAbilityCommand.new("fighter_1", "champion_critical_finisher", "skel_1")
+	var events: Array[GameEvent] = cmd.apply(state)
+
+	var failures: Array[String] = []
+	for evt in events:
+		if evt.event_type == "EXECUTED":
+			failures.append("above_threshold: EXECUTED event fired but target was above threshold (50%% HP)")
+	# Should see normal attack-roll DICE_ROLLED
+	var saw_attack_roll: bool = false
+	for evt in events:
+		if evt.event_type == "DICE_ROLLED" and evt.data.get("type") == "attack":
+			saw_attack_roll = true
+			break
+	if not saw_attack_roll:
+		failures.append("above_threshold: expected normal attack-roll DICE_ROLLED, none seen")
+	return failures
+
+
+# Target below threshold + execute success: target.hp = 0, EXECUTED +
+# ACTOR_DEFEATED events fire, NO attack-roll DICE_ROLLED (skipped).
+# We sweep seeds to find one where rng.chance(0.5) returns true.
+func _test_execute_can_instakill_below_threshold() -> Array[String]:
+	for seed_val in range(1, 30):
+		# Skeleton at 2/12 = 16.6% HP, below 25% threshold
+		var state: GameState = _make_finisher_state(2, seed_val)
+		var cmd: UseAbilityCommand = UseAbilityCommand.new("fighter_1", "champion_critical_finisher", "skel_1")
+		var events: Array[GameEvent] = cmd.apply(state)
+
+		var saw_executed: bool = false
+		var saw_defeated: bool = false
+		var saw_attack_roll: bool = false
+		for evt in events:
+			if evt.event_type == "EXECUTED" and evt.data.get("target") == "skel_1":
+				saw_executed = true
+			if evt.event_type == "ACTOR_DEFEATED" and evt.data.get("target") == "skel_1":
+				saw_defeated = true
+			if evt.event_type == "DICE_ROLLED" and evt.data.get("type") == "attack":
+				saw_attack_roll = true
+
+		if saw_executed:
+			# Validate the execute path's invariants
+			if state.find_monster("skel_1").hp != 0:
+				return ["execute_kill: seed %d EXECUTED but target HP=%d (expected 0)" % [seed_val, state.find_monster("skel_1").hp]]
+			if not saw_defeated:
+				return ["execute_kill: seed %d EXECUTED without ACTOR_DEFEATED event" % seed_val]
+			if saw_attack_roll:
+				return ["execute_kill: seed %d EXECUTED but attack-roll DICE_ROLLED also fired (should be skipped)" % seed_val]
+			return []  # success
+	return ["execute_kill: 29 seeds at 16.6%% HP with 0.5 chance produced no executes — suspicious (probability ~5e-9)"]
+
+
+# Target below threshold + execute FAILS: falls through to normal damage.
+# We sweep seeds looking for one where rng.chance(0.5) returns false AND
+# the subsequent attack roll hits, then verify damage was applied.
+func _test_execute_fail_falls_through_to_damage() -> Array[String]:
+	for seed_val in range(1, 60):
+		# Skeleton at 2/12 = 16.6% HP, below threshold. Reset HP each iteration.
+		var state: GameState = _make_finisher_state(2, seed_val)
+		var cmd: UseAbilityCommand = UseAbilityCommand.new("fighter_1", "champion_critical_finisher", "skel_1")
+		var events: Array[GameEvent] = cmd.apply(state)
+
+		var saw_executed: bool = false
+		var saw_attack_roll: bool = false
+		var saw_damage_or_miss: bool = false
+		for evt in events:
+			if evt.event_type == "EXECUTED":
+				saw_executed = true
+			if evt.event_type == "DICE_ROLLED" and evt.data.get("type") == "attack":
+				saw_attack_roll = true
+			if evt.event_type in ["DAMAGE_DEALT", "ATTACK_MISSED"]:
+				saw_damage_or_miss = true
+
+		# Looking for: execute did NOT fire, but normal flow did.
+		if not saw_executed and saw_attack_roll and saw_damage_or_miss:
+			return []  # success — execute failed and normal flow ran
+	return ["execute_fail: 59 seeds produced no execute-fail-then-normal-flow case (suspicious)"]
