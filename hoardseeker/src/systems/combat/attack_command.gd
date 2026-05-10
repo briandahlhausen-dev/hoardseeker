@@ -42,6 +42,11 @@ class_name AttackCommand extends Command
 @export var damage_dice_sides: int = 8
 @export var damage_modifier: int = 0
 
+## Damage type — looked up against target.damage_resistances for the
+## final-damage multiplier. Defaults to "physical" so basic attacks
+## stay physical without explicit setting.
+@export var damage_type: String = "physical"
+
 ## Action points consumed by this attack, regardless of hit/miss.
 @export var ap_cost: int = 1
 
@@ -102,6 +107,14 @@ func apply(state: Resource) -> Array[GameEvent]:
 
 		# Floor at 0 — modifiers shouldn't turn an attack into healing
 		damage_total = max(0, damage_total)
+
+		# Apply target's resistance for this damage type. Missing key
+		# defaults to 1.0 (no modifier). Floored at 0 since some
+		# resistances may be > 1.0 (vulnerability) and we don't want
+		# negative damage either way.
+		var resistance: float = target.damage_resistances.get(damage_type, 1.0)
+		damage_total = max(0, int(damage_total * resistance))
+
 		target.hp = max(0, target.hp - damage_total)
 
 		events.append(GameEvent.new("DAMAGE_DEALT", {
@@ -109,6 +122,7 @@ func apply(state: Resource) -> Array[GameEvent]:
 			"target": target_id,
 			"amount": damage_total,
 			"crit": is_crit,
+			"damage_type": damage_type,
 		}))
 
 		if target.hp <= 0:

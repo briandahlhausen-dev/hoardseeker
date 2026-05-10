@@ -40,5 +40,13 @@ class_name PlayerState extends Resource
 @export var ability_ids: Array[String] = []     # ability IDs the player currently has
 @export var artifact_ids: Array[String] = []    # artifact IDs picked up
 @export var status_effects: Array = []          # Array of StatusEffect resources (Phase 1+)
+
+# === Damage resistances ===
+## Maps damage_type (String) -> multiplier (float). 1.0 = normal damage,
+## 0.5 = half damage (resistance), 0.0 = immunity, 2.0 = vulnerability.
+## Missing keys default to 1.0. Populated from class/race/equipment
+## eventually; for now stays empty unless explicitly set by tests or
+## (future) buff effects.
+@export var damage_resistances: Dictionary = {}
 @export var gold: int = 0
 @export var glints: int = 0                     # risk currency

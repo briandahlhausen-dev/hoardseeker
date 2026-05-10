@@ -39,3 +39,11 @@ class_name MonsterState extends Resource
 
 # === Status effects applied to this monster ===
 @export var status_effects: Array = []      # Array of StatusEffect resources (Phase 1+)
+
+# === Damage resistances ===
+## Maps damage_type (String) -> multiplier (float). 1.0 = normal damage,
+## 0.5 = half damage (resistance), 0.0 = immunity, 2.0 = vulnerability.
+## Missing keys default to 1.0 (no modifier). Populated from MonsterDef
+## at spawn; can be temporarily modified during combat (e.g. by status
+## effects that grant resistance).
+@export var damage_resistances: Dictionary = {}

@@ -42,6 +42,14 @@ class_name MonsterDef extends Resource
 ## skeleton-side UseAbilityCommand once monster turns are designed.
 @export var ability_ids: Array[String] = []
 
+# === Damage resistances ===
+## Maps damage_type (String) -> multiplier (float). 1.0 = normal damage,
+## 0.5 = half damage (resistance), 0.0 = immunity, 2.0 = vulnerability.
+## Copied to MonsterState on spawn; missing keys default to 1.0 at the
+## resolution site (no modifier). Use this for static resistances baked
+## into the monster — temporary resistance buffs go through status effects.
+@export var damage_resistances: Dictionary = {}
+
 
 ## Construct a fresh MonsterState for this def. The actor_id is per-
 ## encounter unique (multiple skeletons from this def get different
@@ -62,4 +70,5 @@ func spawn_monster_state(p_actor_id: String) -> MonsterState:
 	m.action_points = max_action_points
 	m.max_action_points = max_action_points
 	m.ability_ids = ability_ids.duplicate()  # don't share array refs across spawns
+	m.damage_resistances = damage_resistances.duplicate()  # same — independent dict per spawn
 	return m

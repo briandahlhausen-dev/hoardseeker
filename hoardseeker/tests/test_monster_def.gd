@@ -37,6 +37,10 @@ func run_tests() -> Array[String]:
 	failures.append_array(_test_skeleton_archer_canonical_stats())
 	failures.append_array(_test_zombie_canonical_stats())
 	failures.append_array(_test_ghoul_canonical_stats())
+	# Phase F — damage resistances
+	failures.append_array(_test_damage_resistances_default_empty())
+	failures.append_array(_test_zombie_has_physical_resistance())
+	failures.append_array(_test_spawn_copies_resistances_independently())
 	return failures
 
 
@@ -201,6 +205,62 @@ func _test_zombie_canonical_stats() -> Array[String]:
 		failures.append("zombie: ac should be 11 (slow), got %d" % def.ac)
 	if def.max_action_points != 1:
 		failures.append("zombie: max_action_points should be 1 (slow), got %d" % def.max_action_points)
+	return failures
+
+
+# --- Phase F: damage resistances ---
+
+# Fresh MonsterDef has empty damage_resistances. Skeletons (warrior +
+# archer) and ghoul are non-resistant per CONTENT.md flavor — only
+# zombie has physical resistance.
+func _test_damage_resistances_default_empty() -> Array[String]:
+	var failures: Array[String] = []
+	var fresh: MonsterDef = MonsterDef.new()
+	if fresh.damage_resistances.size() != 0:
+		failures.append("resist_default: fresh MonsterDef should have empty resistances, got %d entries" % fresh.damage_resistances.size())
+
+	# Verify warrior + archer + ghoul have no resistances (only zombie does)
+	for path in [SKELETON_WARRIOR_PATH, SKELETON_ARCHER_PATH, GHOUL_PATH]:
+		var def: MonsterDef = load(path) as MonsterDef
+		if def.damage_resistances.size() != 0:
+			failures.append("resist_default: %s should have no resistances, got %s" % [path, str(def.damage_resistances)])
+	return failures
+
+
+# zombie.tres carries physical resistance per CONTENT.md flavor:
+# "high physical resistance". Multiplier of 0.5 means half damage.
+func _test_zombie_has_physical_resistance() -> Array[String]:
+	var def: MonsterDef = load(ZOMBIE_PATH) as MonsterDef
+	var failures: Array[String] = []
+	if not def.damage_resistances.has("physical"):
+		failures.append("zombie_resist: zombie.tres should have physical resistance entry")
+		return failures
+	var mult = def.damage_resistances["physical"]
+	if mult != 0.5:
+		failures.append("zombie_resist: physical multiplier should be 0.5, got %s" % str(mult))
+	return failures
+
+
+# spawn_monster_state copies resistances into the runtime state — and
+# the dictionary is independent across spawns (mutating one doesn't
+# leak into the def or other spawns).
+func _test_spawn_copies_resistances_independently() -> Array[String]:
+	var def: MonsterDef = load(ZOMBIE_PATH) as MonsterDef
+	var z1: MonsterState = def.spawn_monster_state("z1")
+	var z2: MonsterState = def.spawn_monster_state("z2")
+
+	var failures: Array[String] = []
+	if z1.damage_resistances.get("physical", -1) != 0.5:
+		failures.append("spawn_resist: z1 should have physical=0.5, got %s" % str(z1.damage_resistances.get("physical", -1)))
+	if z2.damage_resistances.get("physical", -1) != 0.5:
+		failures.append("spawn_resist: z2 should have physical=0.5, got %s" % str(z2.damage_resistances.get("physical", -1)))
+
+	# Mutate z1's resistances; z2 and the def must be unaffected
+	z1.damage_resistances["fire"] = 2.0
+	if z2.damage_resistances.has("fire"):
+		failures.append("spawn_resist: mutating z1.damage_resistances affected z2 (shared reference)")
+	if def.damage_resistances.has("fire"):
+		failures.append("spawn_resist: mutating z1.damage_resistances affected the def (shared reference)")
 	return failures
 
 
