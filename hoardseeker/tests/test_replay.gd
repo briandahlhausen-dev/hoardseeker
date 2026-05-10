@@ -44,6 +44,7 @@ func run_tests() -> Array[String]:
 	failures.append_array(_test_replay_round_trips_across_many_seeds())
 	failures.append_array(_test_replay_does_not_mutate_input_state())
 	failures.append_array(_test_replay_halts_on_validation_failure())
+	failures.append_array(_test_replay_full_realistic_fight_round_trips())
 	return failures
 
 
@@ -226,3 +227,118 @@ func _test_replay_halts_on_validation_failure() -> Array[String]:
 	if s_replay.rng.stream_position != 0:
 		failures.append("halts_on_validation: RNG should not have advanced (expected 0, got %d)" % s_replay.rng.stream_position)
 	return failures
+
+
+# Full Phase-1 integration: a realistic fight using ALL three concrete
+# Commands plus single AND multi-target UseAbilityCommand variants,
+# replayed end-to-end against a fresh initial state. The chunk-1..chunk-5
+# architecture must compose: AttackCommand + EndTurnCommand + single-
+# target UseAbilityCommand + multi-target UseAbilityCommand all
+# round-tripping in one log against fresh RNG and fresh EventLog.
+#
+# If any chunk's apply() has a hidden non-determinism (or any pair has a
+# composition bug), this test catches it. Existing replay tests round-
+# trip individual command types; this one round-trips the combination.
+func _test_replay_full_realistic_fight_round_trips() -> Array[String]:
+	var s_original: GameState = _make_full_fight_state(31)
+	var processor: CommandProcessor = CommandProcessor.new()
+
+	# Realistic fight script — fighter_1 has 3 AP per turn, knows 3 abilities.
+	# Turn 1: fighter cleaves both skeletons (2 AP), then power-strikes skel_1 (2 AP).
+	#         Wait — power_strike costs 2, fighter has 3 - 2 = 1 left. Use slash (1 AP).
+	processor.process(
+		UseAbilityCommand.multi_target("fighter_1", "fighter_cleave", ["skel_1", "skel_2"]),
+		s_original,
+	)
+	processor.process(
+		UseAbilityCommand.new("fighter_1", "fighter_slash", "skel_1"),
+		s_original,
+	)
+	# Fighter ends turn -> skel_1's turn
+	processor.process(EndTurnCommand.new("fighter_1"), s_original)
+	# Skeletons just pass (no monster AI yet)
+	processor.process(EndTurnCommand.new("skel_1"), s_original)
+	processor.process(EndTurnCommand.new("skel_2"), s_original)
+	# Wraps back to fighter, AP refreshed
+	# Turn 2: fighter does a basic AttackCommand (the raw primitive) on skel_2,
+	# then power_strikes skel_2 (2 AP, total 3 spent).
+	# But power_strike validation requires actor.hp > 0 and target.hp > 0;
+	# if skel_2 is dead from turn 1 cleave, the command rejects. That's fine —
+	# the test asserts replay matches whatever the original processor did, hit or miss.
+	processor.process(AttackCommand.new("fighter_1", "skel_2"), s_original)
+	processor.process(
+		UseAbilityCommand.new("fighter_1", "fighter_power_strike", "skel_2"),
+		s_original,
+	)
+
+	var snapshot_original: Dictionary = _full_fight_snapshot(s_original)
+
+	# Replay against a fresh initial state. Same seed, same starting roster.
+	var s_fresh: GameState = _make_full_fight_state(31)
+	var s_replay: Resource = s_original.event_log.replay(s_fresh)
+	var snapshot_replay: Dictionary = _full_fight_snapshot(s_replay)
+
+	return _compare_snapshots(snapshot_original, snapshot_replay, "full_fight")
+
+
+# Multi-skeleton initial state for the full-fight integration test.
+# Fighter knows all three abilities. Turn order is 3-actor.
+func _make_full_fight_state(seed_val: int) -> GameState:
+	var gs: GameState = GameState.new()
+	gs.run_id = "full_fight_replay_test"
+	gs.seed = seed_val
+	gs.rng = RNGService.new(seed_val)
+	gs.event_log = EventLog.new()
+	gs.event_log.seed = seed_val
+	gs.phase = "IN_COMBAT"
+
+	var fighter: PlayerState = PlayerState.new()
+	fighter.actor_id = "fighter_1"
+	fighter.display_name = "Aric"
+	fighter.class_id = "fighter"
+	fighter.hp = 30
+	fighter.max_hp = 30
+	fighter.ac = 16
+	fighter.action_points = 3
+	fighter.max_action_points = 3
+	fighter.ability_ids = ["fighter_slash", "fighter_cleave", "fighter_power_strike"]
+	gs.players.append(fighter)
+
+	gs.current_encounter = EncounterState.new()
+	for actor_id in ["skel_1", "skel_2"]:
+		var skel: MonsterState = MonsterState.new()
+		skel.actor_id = actor_id
+		skel.monster_id = "skeleton_warrior"
+		skel.hp = 12
+		skel.max_hp = 12
+		skel.ac = 13
+		skel.action_points = 2
+		skel.max_action_points = 2
+		gs.current_encounter.monsters.append(skel)
+
+	gs.turn_order = ["fighter_1", "skel_1", "skel_2"]
+	gs.active_actor_id = "fighter_1"
+
+	return gs
+
+
+# Snapshot for full-fight test — captures both skeletons.
+#
+# Deliberately does NOT include event_log.commands.size() or .events.size().
+# EventLog.replay() does not re-append commands/events to the replayed
+# state's log (the log is the input, not the output) — so post-replay
+# log sizes are 0 even when state HP/AP/RNG match exactly. Asserting
+# log-size equality would falsely fail this test for a non-bug.
+func _full_fight_snapshot(state: Resource) -> Dictionary:
+	var fighter: PlayerState = state.find_player("fighter_1")
+	var skel_1: MonsterState = state.find_monster("skel_1")
+	var skel_2: MonsterState = state.find_monster("skel_2")
+	return {
+		"fighter_hp": fighter.hp,
+		"fighter_ap": fighter.action_points,
+		"skel_1_hp": skel_1.hp,
+		"skel_2_hp": skel_2.hp,
+		"active_actor": state.active_actor_id,
+		"rng_position": state.rng.stream_position,
+		"phase": state.phase,
+	}

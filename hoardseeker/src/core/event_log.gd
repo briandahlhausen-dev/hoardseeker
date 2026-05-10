@@ -53,6 +53,13 @@ func append_events(events_list: Array[GameEvent]) -> void:
 ## or a tampered log — push_error and return the partial state. The caller
 ## (validator, replay viewer) decides what to do from there.
 ##
+## What replay DOES NOT do: re-append commands or events to the returned
+## state's event_log. The log here is the INPUT — replay reads it. The
+## returned state's event_log is whatever the initial_state's event_log
+## was, typically empty. Callers comparing post-replay state to
+## post-original-run state should compare HP / AP / RNG position / etc.,
+## NOT event_log sizes (which won't match by design).
+##
 ## Note: parameter and return type are Resource (not GameState) to avoid
 ## a circular class_name dependency at parse time. Caller casts as needed.
 func replay(initial_state: Resource) -> Resource:
