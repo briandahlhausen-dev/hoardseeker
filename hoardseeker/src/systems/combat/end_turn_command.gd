@@ -116,24 +116,36 @@ func _tick_status_effects(actor: Resource, actor_id: String, events: Array[GameE
 				# action_points — but the event still fires so renderers
 				# show "stunned!" and replays attribute the moment.
 				actor.action_points = 0
-			"poison":
-				# Poison damages the target each tick. params.damage_per_turn
-				# is the amount; defaults to 0 if not specified (effectively
-				# a no-op — caller error). Emits DAMAGE_DEALT so the renderer
-				# can show the damage popup; ACTOR_DEFEATED if HP hits 0.
+			"poison", "bleed":
+				# Damage-over-time effects share one arm. They differ only
+				# in their default damage_type — poison defaults to "poison"
+				# (its own resistance lookup), bleed defaults to "physical"
+				# (zombie's physical resistance reduces bleed but not poison).
+				# Either can override via params.damage_type.
+				#
+				# params.damage_per_turn is the pre-resistance amount.
+				# Resistance is applied via target.damage_resistances same
+				# as direct attacks, so DOT damage and direct damage now
+				# follow consistent rules.
 				var dmg: int = effect.params.get("damage_per_turn", 0)
 				if dmg > 0:
-					actor.hp = max(0, actor.hp - dmg)
-					events.append(GameEvent.new("DAMAGE_DEALT", {
-						"target": actor_id,
-						"amount": dmg,
-						"source": "status_effect:poison",
-						"crit": false,
-					}))
-					if actor.hp <= 0:
-						events.append(GameEvent.new("ACTOR_DEFEATED", {
+					var default_type: String = "poison" if effect.effect_id == "poison" else "physical"
+					var dtype: String = effect.params.get("damage_type", default_type)
+					var resist: float = actor.damage_resistances.get(dtype, 1.0)
+					dmg = max(0, int(dmg * resist))
+					if dmg > 0:
+						actor.hp = max(0, actor.hp - dmg)
+						events.append(GameEvent.new("DAMAGE_DEALT", {
 							"target": actor_id,
+							"amount": dmg,
+							"source": "status_effect:" + effect.effect_id,
+							"damage_type": dtype,
+							"crit": false,
 						}))
+						if actor.hp <= 0:
+							events.append(GameEvent.new("ACTOR_DEFEATED", {
+								"target": actor_id,
+							}))
 			"slow":
 				# Slow reduces AP each turn (after the AP refresh has run).
 				# params.ap_reduction is the amount. Floored at 0; can't go

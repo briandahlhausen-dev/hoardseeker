@@ -54,6 +54,10 @@ func run_tests() -> Array[String]:
 	failures.append_array(_test_slow_floors_ap_at_zero())
 	failures.append_array(_test_regenerate_heals_capped_at_max_hp())
 	failures.append_array(_test_regenerate_does_not_revive_dead_actor())
+	# Phase I — bleed (DOT physical damage, shares dispatch with poison)
+	failures.append_array(_test_bleed_default_type_is_physical())
+	failures.append_array(_test_bleed_damage_reduced_by_physical_resistance())
+	failures.append_array(_test_poison_damage_reduced_by_poison_resistance())
 	return failures
 
 
@@ -648,4 +652,106 @@ func _test_regenerate_does_not_revive_dead_actor() -> Array[String]:
 	for evt in state.event_log.events:
 		if evt.event_type == "HEALED" and evt.data.get("target") == "fighter_2":
 			return ["regenerate_no_revive: HEALED should not fire for a defeated actor"]
+	return []
+
+
+# --- Phase I: bleed (DOT physical damage, shares dispatch with poison) ---
+
+# bleed defaults to "physical" damage type. The DAMAGE_DEALT event
+# carries damage_type so renderers can show "physical bleed" vs
+# "poison venom" differently.
+func _test_bleed_default_type_is_physical() -> Array[String]:
+	var state: GameState = _make_state()
+	var p2: PlayerState = PlayerState.new()
+	p2.actor_id = "fighter_2"
+	p2.hp = 20
+	p2.max_hp = 20
+	p2.ac = 16
+	p2.max_action_points = 3
+	state.players.append(p2)
+	state.turn_order = ["fighter_1", "fighter_2"]
+	state.active_actor_id = "fighter_1"
+
+	var bleed: StatusEffect = StatusEffect.new()
+	bleed.effect_id = "bleed"
+	bleed.duration_remaining = 1
+	bleed.params = {"damage_per_turn": 3}  # no damage_type override → defaults to physical
+	state.find_player("fighter_2").status_effects.append(bleed)
+
+	var processor: CommandProcessor = CommandProcessor.new()
+	processor.process(EndTurnCommand.new("fighter_1"), state)
+
+	var saw_bleed_damage: bool = false
+	for evt in state.event_log.events:
+		if evt.event_type == "DAMAGE_DEALT" and evt.data.get("source") == "status_effect:bleed":
+			if evt.data.get("damage_type") == "physical":
+				saw_bleed_damage = true
+				break
+	if not saw_bleed_damage:
+		return ["bleed_default: expected DAMAGE_DEALT from bleed with damage_type='physical'"]
+	return []
+
+
+# A target with physical resistance takes reduced bleed damage. Zombie
+# has 0.5 physical resistance per Phase F — bleed at 4/turn deals 2.
+func _test_bleed_damage_reduced_by_physical_resistance() -> Array[String]:
+	var state: GameState = _make_state()
+	var p2: PlayerState = PlayerState.new()
+	p2.actor_id = "fighter_2"
+	p2.hp = 20
+	p2.max_hp = 20
+	p2.ac = 16
+	p2.max_action_points = 3
+	p2.damage_resistances = {"physical": 0.5}  # mid-fight resistance buff or innate
+	state.players.append(p2)
+	state.turn_order = ["fighter_1", "fighter_2"]
+	state.active_actor_id = "fighter_1"
+
+	var bleed: StatusEffect = StatusEffect.new()
+	bleed.effect_id = "bleed"
+	bleed.duration_remaining = 1
+	bleed.params = {"damage_per_turn": 4}
+	state.find_player("fighter_2").status_effects.append(bleed)
+
+	var processor: CommandProcessor = CommandProcessor.new()
+	processor.process(EndTurnCommand.new("fighter_1"), state)
+
+	var p2_after: PlayerState = state.find_player("fighter_2")
+	if p2_after.hp != 18:
+		return ["bleed_resist: expected HP 18 (20 - 2 = 4 * 0.5), got %d" % p2_after.hp]
+	return []
+
+
+# Poison's default damage_type is "poison" — a target with poison
+# resistance reduces poison damage but NOT physical (e.g., Cure Wounds
+# wouldn't help; an antitoxin would).
+func _test_poison_damage_reduced_by_poison_resistance() -> Array[String]:
+	var state: GameState = _make_state()
+	var p2: PlayerState = PlayerState.new()
+	p2.actor_id = "fighter_2"
+	p2.hp = 20
+	p2.max_hp = 20
+	p2.ac = 16
+	p2.max_action_points = 3
+	p2.damage_resistances = {"poison": 0.0}  # immune to poison
+	state.players.append(p2)
+	state.turn_order = ["fighter_1", "fighter_2"]
+	state.active_actor_id = "fighter_1"
+
+	var poison: StatusEffect = StatusEffect.new()
+	poison.effect_id = "poison"
+	poison.duration_remaining = 1
+	poison.params = {"damage_per_turn": 5}
+	state.find_player("fighter_2").status_effects.append(poison)
+
+	var processor: CommandProcessor = CommandProcessor.new()
+	processor.process(EndTurnCommand.new("fighter_1"), state)
+
+	var p2_after: PlayerState = state.find_player("fighter_2")
+	if p2_after.hp != 20:
+		return ["poison_immune: expected HP 20 (immune), got %d" % p2_after.hp]
+	# DAMAGE_DEALT should NOT fire when damage clamps to 0 after resistance
+	for evt in state.event_log.events:
+		if evt.event_type == "DAMAGE_DEALT" and evt.data.get("source") == "status_effect:poison":
+			return ["poison_immune: DAMAGE_DEALT should not fire when poison damage is fully resisted"]
 	return []

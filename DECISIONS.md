@@ -774,6 +774,33 @@ The dispatch is gated by `def.execute_threshold_pct > 0.0 AND def.execute_chance
 
 ---
 
+## 2026-05-10 — DOT effects (poison, bleed) share dispatch + apply damage resistance
+
+**Status**: Decided
+
+**Context**: Phase I added the bleed status effect. To distinguish bleed from poison without making them flavor-only duplicates, the dispatch needed to read damage_type from the effect and apply target resistance — completing the work flagged in the Phase F entry's revisit list ("damage-over-time effects need their own resistance lookup").
+
+**Decision**: poison and bleed share a single match arm in `_tick_status_effects`. Both read `params.damage_type` (defaults: "poison" for poison effect_id, "physical" for bleed). Damage is multiplied by `target.damage_resistances.get(damage_type, 1.0)` before application — same arithmetic as direct attacks. DAMAGE_DEALT events carry `damage_type` so renderers / replay viewers can distinguish bleed vs poison without re-deriving.
+
+**Rationale**:
+- DOT damage now follows the same rules as direct damage. Resistance applies consistently. A character resistant to poison (antitoxin, racial trait) has natural poison resistance; a character with physical-resistance armor reduces bleed damage but not poison. Aligns with D&D 5e damage-type semantics.
+- Sharing the dispatch arm avoids two near-identical code paths. The only meaningful difference between poison and bleed is the default damage_type, captured in one ternary. Future "burn", "frostbite", etc. follow the same shape — add a new effect_id (or reuse poison/bleed with a custom `damage_type` in params).
+- The "damage clamps to 0 → no DAMAGE_DEALT event" rule is intentional: when damage is fully resisted, the renderer would show "0 damage" which is noise, not signal. Players see the effect tick (STATUS_TICKED still fires) but no damage popup.
+
+**Trade-offs**:
+- Two effect_ids ("poison", "bleed") for what's mechanically one mechanism. Argument for: lets future mechanics distinguish them (e.g., "Cleanse Poison" cures poison but not bleed; "Bandage" cures bleed but not poison). Argument against: a single "damage_over_time" effect_id with damage_type param would be even cleaner. Going with two for narrative + cleansability.
+- Existing poison tests don't set resistance, so the new resistance lookup is a behavior preservation for them (multiplier defaults to 1.0). New tests exercise the resistance interaction.
+
+**Load-bearing files**:
+- [src/systems/combat/end_turn_command.gd](hoardseeker/src/systems/combat/end_turn_command.gd) — combined `"poison", "bleed":` arm with damage_type-aware resistance lookup.
+
+**Revisit if**:
+- A future DOT effect needs different stack/cleanse rules than poison or bleed — split into its own arm.
+- "burn", "frostbite", or similar additional damage types want their own effect_ids — add arms; share params shape.
+- Cross-tick effects need to interact (e.g., bleed amplifies on poisoned targets) — add cross-effect logic in the tick loop.
+
+---
+
 ## Open questions (not yet decided)
 
 These need to be revisited as the slice progresses:
