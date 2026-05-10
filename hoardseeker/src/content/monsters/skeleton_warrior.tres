@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="MonsterDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/monsters/monster_def.gd" id="1_monster_def"]
+
+[resource]
+script = ExtResource("1_monster_def")
+id = "skeleton_warrior"
+name_string_id = "monster_skeleton_warrior_name"
+description_string_id = "monster_skeleton_warrior_description"
+max_hp = 12
+ac = 13
+max_action_points = 2
+ability_ids = []

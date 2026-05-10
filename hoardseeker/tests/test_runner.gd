@@ -74,6 +74,11 @@ func _init() -> void:
 	var replay_test: Object = replay_script.new()
 	total_failures.append_array(_run("EventLog replay round-trip", replay_test))
 
+	test_count += 1
+	var monster_def_script: Script = load("res://tests/test_monster_def.gd")
+	var monster_def_test: Object = monster_def_script.new()
+	total_failures.append_array(_run("MonsterDef + skeleton_warrior.tres", monster_def_test))
+
 	# --- Summary ---
 	print("================================================================")
 	if total_failures.is_empty():
