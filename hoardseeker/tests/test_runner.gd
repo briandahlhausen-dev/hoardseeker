@@ -79,6 +79,11 @@ func _init() -> void:
 	var monster_def_test: Object = monster_def_script.new()
 	total_failures.append_array(_run("MonsterDef + skeleton_warrior.tres", monster_def_test))
 
+	test_count += 1
+	var status_script: Script = load("res://tests/test_status_effect.gd")
+	var status_test: Object = status_script.new()
+	total_failures.append_array(_run("Status effects + stun", status_test))
+
 	# --- Summary ---
 	print("================================================================")
 	if total_failures.is_empty():
