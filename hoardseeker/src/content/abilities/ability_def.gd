@@ -73,3 +73,22 @@ class_name AbilityDef extends Resource
 @export var heal_dice_count: int = 0
 @export var heal_dice_sides: int = 0
 @export var heal_modifier: int = 0
+
+# === Execute (instakill at low HP) ===
+## Optional "execute" payload. When `execute_threshold_pct > 0` and
+## `execute_chance > 0`, UseAbilityCommand checks BEFORE the attack roll
+## whether target.hp / target.max_hp < execute_threshold_pct. If yes,
+## rolls rng.chance(execute_chance); on success the target is instakilled
+## (target.hp = 0, EXECUTED + ACTOR_DEFEATED events fire) and the normal
+## attack/damage flow is skipped entirely.
+##
+## On execute failure (chance roll missed) OR when target is above
+## threshold, the ability falls through to the normal damage path. So
+## execute abilities should also have a sensible damage payload — a
+## fallback for when the execute doesn't land.
+##
+## Currently checked PRE-damage (target's HP at time of casting). The
+## alternative is post-damage check ("finishing blow" flavor); see the
+## chunk-H DECISIONS entry for why pre-damage was picked.
+@export var execute_threshold_pct: float = 0.0
+@export var execute_chance: float = 0.0
