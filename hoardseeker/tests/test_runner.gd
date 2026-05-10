@@ -69,6 +69,11 @@ func _init() -> void:
 	var use_ability_test: Object = use_ability_script.new()
 	total_failures.append_array(_run("UseAbilityCommand", use_ability_test))
 
+	test_count += 1
+	var replay_script: Script = load("res://tests/test_replay.gd")
+	var replay_test: Object = replay_script.new()
+	total_failures.append_array(_run("EventLog replay round-trip", replay_test))
+
 	# --- Summary ---
 	print("================================================================")
 	if total_failures.is_empty():
