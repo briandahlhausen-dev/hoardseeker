@@ -20,6 +20,9 @@ const MonsterDef = preload("res://src/content/monsters/monster_def.gd")
 const MonsterState = preload("res://src/core/monster_state.gd")
 
 const SKELETON_WARRIOR_PATH := "res://src/content/monsters/skeleton_warrior.tres"
+const SKELETON_ARCHER_PATH := "res://src/content/monsters/skeleton_archer.tres"
+const ZOMBIE_PATH := "res://src/content/monsters/zombie.tres"
+const GHOUL_PATH := "res://src/content/monsters/ghoul.tres"
 
 
 func run_tests() -> Array[String]:
@@ -30,6 +33,10 @@ func run_tests() -> Array[String]:
 	failures.append_array(_test_spawn_monster_state_returns_usable_state())
 	failures.append_array(_test_spawn_monster_state_with_distinct_actor_ids())
 	failures.append_array(_test_spawn_monster_state_does_not_share_array_refs())
+	# Phase B — additional Crypt-biome monsters
+	failures.append_array(_test_skeleton_archer_canonical_stats())
+	failures.append_array(_test_zombie_canonical_stats())
+	failures.append_array(_test_ghoul_canonical_stats())
 	return failures
 
 
@@ -148,4 +155,70 @@ func _test_spawn_monster_state_does_not_share_array_refs() -> Array[String]:
 		failures.append("array_refs: m2.ability_ids was affected by mutating m1 (shared reference)")
 	if def.ability_ids.size() != 2:
 		failures.append("array_refs: def.ability_ids was affected by mutating spawn (shared reference)")
+	return failures
+
+
+# --- Phase B: additional Crypt-biome monsters ---
+#
+# These tests assert canonical stats that come straight from CONTENT.md
+# flavor descriptions. If someone retunes the .tres files for balance,
+# they should also update these expected values — the tests intentionally
+# fail when canonical stats drift.
+
+# skeleton_archer per CONTENT.md: "ranged, low HP, low AC".
+# Stats: 8 HP, AC 11, 2 AP — distinguishable from warrior (12/13/2).
+func _test_skeleton_archer_canonical_stats() -> Array[String]:
+	var def: MonsterDef = load(SKELETON_ARCHER_PATH) as MonsterDef
+	var failures: Array[String] = []
+	if def == null:
+		failures.append("archer: skeleton_archer.tres failed to load as MonsterDef")
+		return failures
+	if def.id != "skeleton_archer":
+		failures.append("archer: id should be 'skeleton_archer', got '%s'" % def.id)
+	if def.max_hp != 8:
+		failures.append("archer: max_hp should be 8 (low HP per CONTENT.md), got %d" % def.max_hp)
+	if def.ac != 11:
+		failures.append("archer: ac should be 11 (low AC), got %d" % def.ac)
+	if def.max_action_points != 2:
+		failures.append("archer: max_action_points should be 2, got %d" % def.max_action_points)
+	return failures
+
+
+# zombie per CONTENT.md: "slow, high HP, high physical resistance".
+# Stats: 18 HP (high), AC 11 (slow lumber), 1 AP (slow). Resistance is
+# a future mechanic; the stat here just expresses the "slow" bit.
+func _test_zombie_canonical_stats() -> Array[String]:
+	var def: MonsterDef = load(ZOMBIE_PATH) as MonsterDef
+	var failures: Array[String] = []
+	if def == null:
+		failures.append("zombie: zombie.tres failed to load as MonsterDef")
+		return failures
+	if def.id != "zombie":
+		failures.append("zombie: id should be 'zombie', got '%s'" % def.id)
+	if def.max_hp != 18:
+		failures.append("zombie: max_hp should be 18 (high HP), got %d" % def.max_hp)
+	if def.ac != 11:
+		failures.append("zombie: ac should be 11 (slow), got %d" % def.ac)
+	if def.max_action_points != 1:
+		failures.append("zombie: max_action_points should be 1 (slow), got %d" % def.max_action_points)
+	return failures
+
+
+# ghoul per CONTENT.md: "fast, paralysis bite (DEX save)".
+# Stats: 10 HP, AC 14 (fast = harder to hit), 3 AP (fast). Paralysis
+# bite + save throws are deferred (see IDEAS.md).
+func _test_ghoul_canonical_stats() -> Array[String]:
+	var def: MonsterDef = load(GHOUL_PATH) as MonsterDef
+	var failures: Array[String] = []
+	if def == null:
+		failures.append("ghoul: ghoul.tres failed to load as MonsterDef")
+		return failures
+	if def.id != "ghoul":
+		failures.append("ghoul: id should be 'ghoul', got '%s'" % def.id)
+	if def.max_hp != 10:
+		failures.append("ghoul: max_hp should be 10, got %d" % def.max_hp)
+	if def.ac != 14:
+		failures.append("ghoul: ac should be 14 (fast), got %d" % def.ac)
+	if def.max_action_points != 3:
+		failures.append("ghoul: max_action_points should be 3 (fast), got %d" % def.max_action_points)
 	return failures

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="MonsterDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/monsters/monster_def.gd" id="1_monster_def"]
+
+[resource]
+script = ExtResource("1_monster_def")
+id = "ghoul"
+name_string_id = "monster_ghoul_name"
+description_string_id = "monster_ghoul_description"
+max_hp = 10
+ac = 14
+max_action_points = 3
+ability_ids = []
