@@ -64,6 +64,11 @@ func run_tests() -> Array[String]:
 	failures.append_array(_test_execute_does_not_trigger_above_threshold())
 	failures.append_array(_test_execute_can_instakill_below_threshold())
 	failures.append_array(_test_execute_fail_falls_through_to_damage())
+	# Phase K — applies_effects on AbilityDef
+	failures.append_array(_test_applies_effects_on_hit())
+	failures.append_array(_test_does_not_apply_effects_on_miss())
+	failures.append_array(_test_does_not_apply_effects_on_defeated_target())
+	failures.append_array(_test_applies_effects_on_heal())
 	return failures
 
 
@@ -650,3 +655,213 @@ func _test_execute_fail_falls_through_to_damage() -> Array[String]:
 		if not saw_executed and saw_attack_roll and saw_damage_or_miss:
 			return []  # success — execute failed and normal flow ran
 	return ["execute_fail: 59 seeds produced no execute-fail-then-normal-flow case (suspicious)"]
+
+
+# --- Phase K: applies_effects on AbilityDef ---
+
+const StatusEffect = preload("res://src/core/status_effect.gd")
+const AbilityDef = preload("res://src/content/abilities/ability_def.gd")
+
+# Build a state with a fighter who knows a "test_attack" ability
+# constructed in-memory (not a .tres file). The ability deals 1 damage
+# and applies a 2-turn stun on hit. We monkey-patch the load path by
+# setting fighter.ability_ids and using a state where we directly
+# inject the def via duck typing.
+#
+# Actually simpler: construct an in-memory AbilityDef and call apply()
+# directly without going through CommandProcessor — we lose the full
+# pipeline test but get focused effect-application coverage.
+func _make_state_with_def_in_memory() -> Dictionary:
+	var gs: GameState = GameState.new()
+	gs.seed = 42
+	gs.rng = RNGService.new(42)
+	gs.event_log = EventLog.new()
+	gs.event_log.seed = 42
+
+	var fighter: PlayerState = PlayerState.new()
+	fighter.actor_id = "fighter_1"
+	fighter.hp = 20
+	fighter.max_hp = 20
+	fighter.ac = 16
+	fighter.action_points = 3
+	fighter.max_action_points = 3
+	gs.players.append(fighter)
+
+	gs.current_encounter = EncounterState.new()
+	const SKELETON_WARRIOR_PATH := "res://src/content/monsters/skeleton_warrior.tres"
+	var skel_def: Resource = load(SKELETON_WARRIOR_PATH)
+	var skel: MonsterState = skel_def.spawn_monster_state("skel_1")
+	gs.current_encounter.monsters.append(skel)
+
+	# Build an in-memory ability def: heavy attack mod (so it always hits
+	# AC 13) + applies 2-turn stun.
+	var def: AbilityDef = AbilityDef.new()
+	def.id = "test_smash"
+	def.ap_cost = 2
+	def.target_count = 1
+	def.attack_modifier = 30  # always hits
+	def.damage_dice_count = 1
+	def.damage_dice_sides = 4
+	def.damage_modifier = 0
+	def.damage_type = "physical"
+
+	var stun: StatusEffect = StatusEffect.new()
+	stun.effect_id = "stun"
+	stun.duration_remaining = 2
+	def.applies_effects = [stun]
+
+	return {"state": gs, "def": def}
+
+
+# Hit applies the declared effect; STATUS_APPLIED event fires; effect
+# now sits on the target. Use the inline _resolve_attack path by
+# building a UseAbilityCommand that we drive directly with the
+# in-memory def via _resolve_against_target.
+#
+# We can't use the normal apply() flow because it loads the def from
+# disk. Instead we test by invoking _resolve_against_target with our
+# in-memory def — the public apply path is covered indirectly by
+# integration tests that use the real fighter_slash etc.
+func _test_applies_effects_on_hit() -> Array[String]:
+	var setup: Dictionary = _make_state_with_def_in_memory()
+	var gs: GameState = setup["state"]
+	var def: AbilityDef = setup["def"]
+
+	var cmd: UseAbilityCommand = UseAbilityCommand.new("fighter_1", "test_smash", "skel_1")
+	var events: Array[GameEvent] = []
+	var skel: MonsterState = gs.find_monster("skel_1")
+	cmd._resolve_against_target(gs, def, skel, "skel_1", events)
+
+	var failures: Array[String] = []
+	# Skeleton should now have the stun effect
+	if skel.status_effects.size() != 1:
+		failures.append("applies_hit: expected 1 effect on skeleton after hit, got %d" % skel.status_effects.size())
+	elif skel.status_effects[0].effect_id != "stun":
+		failures.append("applies_hit: expected stun effect, got '%s'" % skel.status_effects[0].effect_id)
+	elif skel.status_effects[0].duration_remaining != 2:
+		failures.append("applies_hit: stun duration should be 2 (from def), got %d" % skel.status_effects[0].duration_remaining)
+
+	# STATUS_APPLIED should have fired
+	var saw_applied: bool = false
+	for evt in events:
+		if evt.event_type == "STATUS_APPLIED" and evt.data.get("effect_id") == "stun":
+			saw_applied = true
+			break
+	if not saw_applied:
+		failures.append("applies_hit: STATUS_APPLIED event missing")
+
+	# Independence: the def's effect array should NOT be aliased to the
+	# target's status_effects (chunk-K duplicate-on-apply rule)
+	if not skel.status_effects.is_empty() and not def.applies_effects.is_empty():
+		if skel.status_effects[0] == def.applies_effects[0]:
+			failures.append("applies_hit: target's effect is the SAME object as the def's (should be a duplicate)")
+	return failures
+
+
+# Misses don't apply effects. Build the same in-memory def but with a
+# huge target AC so the attack misses, and verify no effect lands.
+func _test_does_not_apply_effects_on_miss() -> Array[String]:
+	var setup: Dictionary = _make_state_with_def_in_memory()
+	var gs: GameState = setup["state"]
+	var def: AbilityDef = setup["def"]
+	# Override the attack modifier to guarantee a miss (negative + low AC means low total)
+	def.attack_modifier = -100
+	gs.find_monster("skel_1").ac = 50  # extra insurance
+
+	var cmd: UseAbilityCommand = UseAbilityCommand.new("fighter_1", "test_smash", "skel_1")
+	var events: Array[GameEvent] = []
+	var skel: MonsterState = gs.find_monster("skel_1")
+	cmd._resolve_against_target(gs, def, skel, "skel_1", events)
+
+	var failures: Array[String] = []
+	if skel.status_effects.size() != 0:
+		failures.append("applies_miss: miss should not apply effects, got %d" % skel.status_effects.size())
+	# Sanity: should have seen ATTACK_MISSED
+	var saw_miss: bool = false
+	for evt in events:
+		if evt.event_type == "ATTACK_MISSED":
+			saw_miss = true
+			break
+	if not saw_miss:
+		failures.append("applies_miss: expected ATTACK_MISSED event")
+	return failures
+
+
+# Defeated targets don't get status effects applied — applying stun to
+# a corpse is meaningless and clutters the log.
+func _test_does_not_apply_effects_on_defeated_target() -> Array[String]:
+	var setup: Dictionary = _make_state_with_def_in_memory()
+	var gs: GameState = setup["state"]
+	var def: AbilityDef = setup["def"]
+	# Set target to 1 HP, give the ability massive damage so it kills on hit
+	def.damage_dice_count = 10
+	def.damage_dice_sides = 100
+	gs.find_monster("skel_1").hp = 1
+
+	var cmd: UseAbilityCommand = UseAbilityCommand.new("fighter_1", "test_smash", "skel_1")
+	var events: Array[GameEvent] = []
+	var skel: MonsterState = gs.find_monster("skel_1")
+	cmd._resolve_against_target(gs, def, skel, "skel_1", events)
+
+	var failures: Array[String] = []
+	if skel.hp != 0:
+		failures.append("applies_dead: target should be defeated (HP 0), got %d" % skel.hp)
+	# Status effects should NOT have been applied
+	if skel.status_effects.size() != 0:
+		failures.append("applies_dead: defeated target should not have effects applied, got %d" % skel.status_effects.size())
+	# No STATUS_APPLIED event
+	for evt in events:
+		if evt.event_type == "STATUS_APPLIED":
+			failures.append("applies_dead: STATUS_APPLIED should not fire when target is defeated")
+			break
+	return failures
+
+
+# Heal abilities also apply effects (heals don't fail, so always apply).
+# Build an in-memory heal ability that applies a "blessing" effect on the
+# heal recipient.
+func _test_applies_effects_on_heal() -> Array[String]:
+	var gs: GameState = GameState.new()
+	gs.seed = 42
+	gs.rng = RNGService.new(42)
+	gs.event_log = EventLog.new()
+
+	var fighter: PlayerState = PlayerState.new()
+	fighter.actor_id = "fighter_1"
+	fighter.hp = 5
+	fighter.max_hp = 20
+	fighter.ac = 16
+	fighter.action_points = 3
+	fighter.max_action_points = 3
+	gs.players.append(fighter)
+	gs.current_encounter = EncounterState.new()
+
+	var def: AbilityDef = AbilityDef.new()
+	def.id = "test_blessed_heal"
+	def.ap_cost = 2
+	def.target_count = 1
+	def.heal_dice_count = 1
+	def.heal_dice_sides = 4
+
+	var bless: StatusEffect = StatusEffect.new()
+	bless.effect_id = "blessing"
+	bless.duration_remaining = 3
+	def.applies_effects = [bless]
+
+	var cmd: UseAbilityCommand = UseAbilityCommand.new("fighter_1", "test_blessed_heal", "fighter_1")
+	var events: Array[GameEvent] = []
+	cmd._resolve_against_target(gs, def, fighter, "fighter_1", events)
+
+	var failures: Array[String] = []
+	# HP should have increased
+	if fighter.hp <= 5:
+		failures.append("applies_heal: HP should have increased from 5, got %d" % fighter.hp)
+	# Blessing effect should be on fighter
+	var saw_blessing: bool = false
+	for e in fighter.status_effects:
+		if e.effect_id == "blessing":
+			saw_blessing = true
+			break
+	if not saw_blessing:
+		failures.append("applies_heal: heal target should have blessing effect")
+	return failures

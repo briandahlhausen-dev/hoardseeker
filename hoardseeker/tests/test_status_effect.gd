@@ -58,6 +58,10 @@ func run_tests() -> Array[String]:
 	failures.append_array(_test_bleed_default_type_is_physical())
 	failures.append_array(_test_bleed_damage_reduced_by_physical_resistance())
 	failures.append_array(_test_poison_damage_reduced_by_poison_resistance())
+	# Phase K — stacking refresh on ApplyStatusEffectCommand
+	failures.append_array(_test_apply_stacks_refreshes_duration())
+	failures.append_array(_test_apply_refresh_takes_max_duration())
+	failures.append_array(_test_apply_permanent_stacks_keep_permanence())
 	return failures
 
 
@@ -754,4 +758,91 @@ func _test_poison_damage_reduced_by_poison_resistance() -> Array[String]:
 	for evt in state.event_log.events:
 		if evt.event_type == "DAMAGE_DEALT" and evt.data.get("source") == "status_effect:poison":
 			return ["poison_immune: DAMAGE_DEALT should not fire when poison damage is fully resisted"]
+	return []
+
+
+# --- Phase K: stacking refresh on ApplyStatusEffectCommand ---
+
+# Applying the same effect_id twice doesn't append a duplicate; instead
+# the existing effect's duration is refreshed. STATUS_REFRESHED fires
+# instead of STATUS_APPLIED.
+func _test_apply_stacks_refreshes_duration() -> Array[String]:
+	var state: GameState = _make_state()
+	# Apply stun once
+	var stun1: StatusEffect = StatusEffect.new()
+	stun1.effect_id = "stun"
+	stun1.duration_remaining = 1
+	var cmd1: ApplyStatusEffectCommand = ApplyStatusEffectCommand.new("fighter_1", "skel_1", stun1)
+	cmd1.apply(state)
+
+	# Apply stun a second time
+	var stun2: StatusEffect = StatusEffect.new()
+	stun2.effect_id = "stun"
+	stun2.duration_remaining = 3
+	var cmd2: ApplyStatusEffectCommand = ApplyStatusEffectCommand.new("fighter_1", "skel_1", stun2)
+	var events2: Array[GameEvent] = cmd2.apply(state)
+
+	var failures: Array[String] = []
+	var skel: MonsterState = state.find_monster("skel_1")
+	if skel.status_effects.size() != 1:
+		failures.append("stacks_refresh: expected 1 effect after second apply (refresh, not append), got %d" % skel.status_effects.size())
+	if skel.status_effects.size() >= 1 and skel.status_effects[0].duration_remaining != 3:
+		failures.append("stacks_refresh: refreshed duration should be 3 (max of 1 and 3), got %d" % skel.status_effects[0].duration_remaining)
+
+	# Second application should have emitted STATUS_REFRESHED, not STATUS_APPLIED
+	var saw_refreshed: bool = false
+	var saw_applied: bool = false
+	for evt in events2:
+		if evt.event_type == "STATUS_REFRESHED":
+			saw_refreshed = true
+		if evt.event_type == "STATUS_APPLIED":
+			saw_applied = true
+	if not saw_refreshed:
+		failures.append("stacks_refresh: second apply should emit STATUS_REFRESHED")
+	if saw_applied:
+		failures.append("stacks_refresh: second apply should NOT emit STATUS_APPLIED (only refresh)")
+	return failures
+
+
+# Refresh takes max(existing, incoming). If a 5-turn stun is already on
+# the target and a 2-turn stun is applied, the result is still 5-turn —
+# can't shorten an effect by reapplying a weaker version.
+func _test_apply_refresh_takes_max_duration() -> Array[String]:
+	var state: GameState = _make_state()
+	var stun1: StatusEffect = StatusEffect.new()
+	stun1.effect_id = "stun"
+	stun1.duration_remaining = 5
+	ApplyStatusEffectCommand.new("fighter_1", "skel_1", stun1).apply(state)
+
+	var stun2: StatusEffect = StatusEffect.new()
+	stun2.effect_id = "stun"
+	stun2.duration_remaining = 2  # weaker
+	ApplyStatusEffectCommand.new("fighter_1", "skel_1", stun2).apply(state)
+
+	var skel: MonsterState = state.find_monster("skel_1")
+	if skel.status_effects[0].duration_remaining != 5:
+		return ["refresh_max: duration should stay at 5 (max of 5 and 2), got %d" % skel.status_effects[0].duration_remaining]
+	return []
+
+
+# Permanent effects (duration -1) survive reapplication; either being
+# permanent makes the result permanent. A 3-turn cast on a permanent
+# effect doesn't shorten it.
+func _test_apply_permanent_stacks_keep_permanence() -> Array[String]:
+	var state: GameState = _make_state()
+	# First effect is permanent
+	var curse1: StatusEffect = StatusEffect.new()
+	curse1.effect_id = "curse"
+	curse1.duration_remaining = -1
+	ApplyStatusEffectCommand.new("fighter_1", "skel_1", curse1).apply(state)
+
+	# Second is finite
+	var curse2: StatusEffect = StatusEffect.new()
+	curse2.effect_id = "curse"
+	curse2.duration_remaining = 3
+	ApplyStatusEffectCommand.new("fighter_1", "skel_1", curse2).apply(state)
+
+	var skel: MonsterState = state.find_monster("skel_1")
+	if skel.status_effects[0].duration_remaining != -1:
+		return ["permanent_stack: permanent effect refreshed by finite should stay permanent (-1), got %d" % skel.status_effects[0].duration_remaining]
 	return []

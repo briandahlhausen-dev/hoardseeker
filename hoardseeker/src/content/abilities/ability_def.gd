@@ -74,6 +74,27 @@ class_name AbilityDef extends Resource
 @export var heal_dice_sides: int = 0
 @export var heal_modifier: int = 0
 
+# === Status effects to apply on success ===
+## Effects to apply to each target after a successful damage / heal.
+## "Success" means the damage hit (not missed) OR the heal landed
+## (heals don't miss). Multiple effects can be declared per ability —
+## e.g., fighter_shield_bash applies STUN; a future "Frostbite" might
+## apply both SLOW and a damage-over-time.
+##
+## Stacking rule (chunk-K design call): when applying an effect with
+## an effect_id already present on the target, REFRESH the duration to
+## max(existing.duration_remaining, incoming.duration_remaining). The
+## existing effect's params are preserved (the second cast doesn't
+## overwrite — match D&D 5e refresh semantics).
+##
+## Each Array entry is a fully-formed StatusEffect with effect_id,
+## duration_remaining, and params populated. UseAbilityCommand
+## DUPLICATES each effect at apply time so the def's instances aren't
+## shared with the target's status_effects array.
+##
+## Empty array (default) = ability applies no effects on success.
+@export var applies_effects: Array[StatusEffect] = []
+
 # === Execute (instakill at low HP) ===
 ## Optional "execute" payload. When `execute_threshold_pct > 0` and
 ## `execute_chance > 0`, UseAbilityCommand checks BEFORE the attack roll

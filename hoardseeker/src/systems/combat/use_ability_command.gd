@@ -181,6 +181,9 @@ func _resolve_heal(
 		"requested": heal_total,
 	}))
 
+	# Heals don't fail; always apply declared status effects.
+	_apply_declared_effects(def, target, target_id, events)
+
 
 ## Damage resolution: attack roll, damage roll if hit, emit events.
 ## This is the chunk-3 path — extracted into its own function only so the
@@ -274,6 +277,11 @@ func _resolve_attack(
 			events.append(GameEvent.new("ACTOR_DEFEATED", {
 				"target": target_id,
 			}))
+		else:
+			# On hit, apply declared status effects. Skip if target is
+			# defeated — applying stun to a corpse is meaningless and
+			# would clutter the log.
+			_apply_declared_effects(def, target, target_id, events)
 	else:
 		events.append(GameEvent.new("ATTACK_MISSED", {
 			"actor": actor_id,
@@ -281,6 +289,30 @@ func _resolve_attack(
 			"ability": ability_id,
 			"fumble": is_fumble,
 		}))
+		# Misses don't apply effects. The "save throw fail still applies
+		# effect on miss" pattern (e.g. shield_bash) is the chunk-L
+		# concern; this branch handles the simple miss=no-effect case.
+
+
+## Apply each effect in def.applies_effects to the target, with the
+## stacking-refresh rule. Each effect is duplicated (deep copy) so the
+## def's array isn't aliased onto the target's status_effects — that
+## would mean two skeletons cleaved by the same swing share effect state,
+## which would break the chunk-7 "spawns are independent" property.
+func _apply_declared_effects(
+	def: AbilityDef,
+	target: Resource,
+	target_id_for_event: String,
+	events: Array[GameEvent],
+) -> void:
+	for declared in def.applies_effects:
+		if declared == null:
+			continue
+		# duplicate(true) deep-copies; new instance is owned by the target.
+		var fresh: StatusEffect = declared.duplicate(true) as StatusEffect
+		ApplyStatusEffectCommand.apply_effect_with_stacking(
+			target, fresh, actor_id, target_id_for_event, events,
+		)
 
 
 ## Resolves an ability_id to its AbilityDef via the convention path.
