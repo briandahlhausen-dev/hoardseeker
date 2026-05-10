@@ -605,6 +605,44 @@ The single-target convenience constructor `UseAbilityCommand.new(actor, ability,
 
 ---
 
+## 2026-05-10 — Status effects: one generic StatusEffect class, dispatch on effect_id, ticked on EndTurnCommand
+
+**Status**: Decided
+
+**Context**: Phase 1 chunk 8 added the status-effect concept end-to-end. Three architectural calls had to be made:
+
+1. **One generic class vs. per-effect subclasses**. We could have one `StatusEffect` Resource with an `effect_id: String` and a `params: Dictionary`, with tick logic dispatching on `effect_id`. Or a class hierarchy: `StunEffect`, `PoisonEffect`, `SlowEffect`, etc., each overriding a virtual `tick()` method.
+2. **When does ticking happen**. Start-of-turn (the affected actor's turn), end-of-turn, top-of-round, or some combination.
+3. **Where does dispatch live**. On the effect object itself (each effect knows how to tick), in EndTurnCommand, in a separate StatusEffectSystem.
+
+**Decision**:
+1. **One generic `StatusEffect` class**. Fields: `effect_id`, `duration_remaining`, `params: Dictionary`, `source_actor_id`. Pure data. Subclasses are NOT introduced.
+2. **Tick at start-of-turn** of the affected actor. Implemented inside `EndTurnCommand.apply()`: when the new active actor is set, their effects tick.
+3. **Dispatch lives in `EndTurnCommand._tick_status_effects()`** as a `match effect_id:` block. Adding a new effect kind is a new branch in that function plus tests; no other code changes.
+
+**Rationale**:
+- Most effects are mostly data (a magnitude + duration) with a small handful of behaviors. A class hierarchy buys polymorphism we don't need yet, at the cost of more files and a more rigid shape that's painful to refactor when we discover an effect needs new fields.
+- Centralized dispatch (one match block in EndTurnCommand) makes "what does this effect do?" answerable in one place. Compared to scattering the answer across N subclass files, this is faster to read and harder to lose track of.
+- Start-of-turn ticking matches D&D 5e's "at the start of your turn" condition checks, which is the design idiom we're inheriting. End-of-turn ticking would force odd phrasing for stun ("loses next turn"); start-of-turn ticking lets us express things naturally ("stunned: lose AP this turn").
+- AP refresh runs BEFORE the tick so stun (which zeros AP) sees a full pool to deny. Reversed order would have AP refresh undo the stun.
+
+**Trade-offs**:
+- The dispatch grows a `match` arm per new effect type. At ~20 effects this becomes a long block; at that point a registry pattern (effect_id → tick callable) may beat the match. Not an issue for the slice (we'll have ~5 effects in scope).
+- The generic `params: Dictionary` is untyped — risk of typos in keys (e.g., `damage_per_turn` vs. `damage`). Mitigation: per-effect tests assert the contract; doc comments in StatusEffect spell out the convention.
+- Effects defined as "modify max_hp" or "give bonus to attack rolls" don't fit cleanly in a tick-based model — those are passive modifiers. When the first such effect arrives we'll likely add a separate "passive modifier" mechanism alongside this tick-based one.
+
+**Load-bearing files**:
+- [src/core/status_effect.gd](hoardseeker/src/core/status_effect.gd) — the data class.
+- [src/systems/combat/apply_status_effect_command.gd](hoardseeker/src/systems/combat/apply_status_effect_command.gd) — the entry point for status creation.
+- [src/systems/combat/end_turn_command.gd](hoardseeker/src/systems/combat/end_turn_command.gd) — `_tick_status_effects()` is where new effect-kinds get their tick behavior.
+
+**Revisit if**:
+- The match block grows beyond ~10 arms and is causing review pain — switch to a registry / dispatch table.
+- Effects need cross-actor or world-level interactions (e.g., aura effects affecting nearby actors) — current single-actor tick model won't handle that cleanly.
+- The first passive modifier (non-tick) effect arrives — needs a separate mechanism.
+
+---
+
 ## Open questions (not yet decided)
 
 These need to be revisited as the slice progresses:

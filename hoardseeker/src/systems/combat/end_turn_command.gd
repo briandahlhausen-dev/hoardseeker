@@ -1,11 +1,14 @@
 ## EndTurnCommand
 ##
 ## The active actor declares their turn over. Advances turn_order to the
-## next actor, refreshes the new actor's action points, increments the
-## round counter when we wrap from last back to first.
+## next actor, refreshes the new actor's action points, ticks status
+## effects on the new active actor, increments the round counter when
+## we wrap from last back to first.
 ##
-## This is the second concrete Command — simpler than AttackCommand,
-## same pattern. It's how a player says "I'm done thinking, move on."
+## This is the second concrete Command. It's how a player says "I'm
+## done thinking, move on" — and it's also where status-effect ticking
+## happens, since "start of an actor's turn" is the canonical moment
+## for effects to decrement / apply / expire.
 ##
 ## Resolution:
 ##   1. Validate: actor_id matches state.active_actor_id
@@ -14,9 +17,15 @@
 ##   4. If we wrapped (next == first), increment round (in EncounterState
 ##      if present, otherwise on GameState as a logical event)
 ##   5. Refresh the new active player's action_points to max
-##   6. Emit TURN_STARTED event for the incoming actor
+##   6. Tick the new active actor's status_effects (decrement durations,
+##      apply per-turn behavior like stun, remove expired)
+##   7. Emit TURN_STARTED event for the incoming actor
 ##
-## Knows about: GameState, PlayerState, GameEvent.
+## Status-effect tick order: AP refresh happens BEFORE the tick, so stun
+## (which zeros AP) sees a full AP pool to deny. If the order were
+## reversed, stun would hit zero AP, then the AP refresh would undo it.
+##
+## Knows about: GameState, PlayerState, StatusEffect, GameEvent.
 ## Used by: CommandProcessor, tests.
 
 class_name EndTurnCommand extends Command
@@ -72,6 +81,63 @@ func apply(state: Resource) -> Array[GameEvent]:
 	if next_player != null:
 		next_player.action_points = next_player.max_action_points
 
+	# Tick status effects on the new active actor — both players AND monsters.
+	# Effects exist on either kind of actor, and stun/poison/etc. should
+	# affect monsters once monster AI lands. Resolved via find_actor (untyped).
+	var next_actor: Resource = state.find_actor(next_actor_id)
+	if next_actor != null:
+		_tick_status_effects(next_actor, next_actor_id, events)
+
 	events.append(GameEvent.new("TURN_STARTED", {"actor": next_actor_id}))
 
 	return events
+
+
+## Tick the actor's status effects at the start of their turn:
+##   - Apply per-turn behavior (stun zeros AP; future: poison damages, etc.)
+##   - Decrement duration_remaining
+##   - Remove expired effects (duration_remaining <= 0)
+##
+## Iterates a copy of the array so we can rebuild it cleanly. Per-effect
+## events are appended to `events` for replay / renderer consumption.
+##
+## Effect dispatch is on effect_id. Adding a new effect kind:
+##   1. Create a new branch in the dispatch
+##   2. Add tests in test_status_effect.gd
+## No new code outside this function — that's the chunk-8 design call.
+func _tick_status_effects(actor: Resource, actor_id: String, events: Array[GameEvent]) -> void:
+	var surviving: Array = []
+	for effect in actor.status_effects:
+		# Per-turn behavior dispatch
+		match effect.effect_id:
+			"stun":
+				# Stun denies all action points for the turn. For monsters
+				# (who don't carry AP yet), this is currently a no-op on
+				# action_points — but the event still fires so renderers
+				# show "stunned!" and replays attribute the moment.
+				actor.action_points = 0
+			# Future effect types (poison, slow, regenerate, bleed, etc.)
+			# add their dispatch branches here. Effects with no per-turn
+			# behavior (only modifying initial values) fall through.
+			_:
+				pass
+
+		events.append(GameEvent.new("STATUS_TICKED", {
+			"target": actor_id,
+			"effect_id": effect.effect_id,
+			"duration_after": effect.duration_remaining - 1,
+		}))
+
+		# Decrement and decide whether the effect survives.
+		# Permanent effects use duration_remaining == -1 (untouched here).
+		if effect.duration_remaining > 0:
+			effect.duration_remaining -= 1
+		if effect.duration_remaining > 0 or effect.duration_remaining == -1:
+			surviving.append(effect)
+		else:
+			events.append(GameEvent.new("STATUS_EXPIRED", {
+				"target": actor_id,
+				"effect_id": effect.effect_id,
+			}))
+
+	actor.status_effects = surviving
