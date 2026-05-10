@@ -116,9 +116,48 @@ func _tick_status_effects(actor: Resource, actor_id: String, events: Array[GameE
 				# action_points — but the event still fires so renderers
 				# show "stunned!" and replays attribute the moment.
 				actor.action_points = 0
-			# Future effect types (poison, slow, regenerate, bleed, etc.)
-			# add their dispatch branches here. Effects with no per-turn
-			# behavior (only modifying initial values) fall through.
+			"poison":
+				# Poison damages the target each tick. params.damage_per_turn
+				# is the amount; defaults to 0 if not specified (effectively
+				# a no-op — caller error). Emits DAMAGE_DEALT so the renderer
+				# can show the damage popup; ACTOR_DEFEATED if HP hits 0.
+				var dmg: int = effect.params.get("damage_per_turn", 0)
+				if dmg > 0:
+					actor.hp = max(0, actor.hp - dmg)
+					events.append(GameEvent.new("DAMAGE_DEALT", {
+						"target": actor_id,
+						"amount": dmg,
+						"source": "status_effect:poison",
+						"crit": false,
+					}))
+					if actor.hp <= 0:
+						events.append(GameEvent.new("ACTOR_DEFEATED", {
+							"target": actor_id,
+						}))
+			"slow":
+				# Slow reduces AP each turn (after the AP refresh has run).
+				# params.ap_reduction is the amount. Floored at 0; can't go
+				# negative. For an actor with max_action_points = 3 and
+				# ap_reduction = 1, slow leaves them at AP = 2.
+				var reduction: int = effect.params.get("ap_reduction", 0)
+				actor.action_points = max(0, actor.action_points - reduction)
+			"regenerate":
+				# Regenerate heals the target each tick, capped at max_hp.
+				# Skips if the actor is already defeated (no Lazarus effect).
+				if actor.hp > 0:
+					var heal: int = effect.params.get("hp_per_turn", 0)
+					if heal > 0:
+						var actual: int = min(heal, actor.max_hp - actor.hp)
+						if actual > 0:
+							actor.hp += actual
+							events.append(GameEvent.new("HEALED", {
+								"target": actor_id,
+								"amount": actual,
+								"source": "status_effect:regenerate",
+							}))
+			# Future effect types (bleed, burn, charm, etc.) add their
+			# dispatch branches here. Effects with no per-turn behavior
+			# (only modifying initial values) fall through.
 			_:
 				pass
 
