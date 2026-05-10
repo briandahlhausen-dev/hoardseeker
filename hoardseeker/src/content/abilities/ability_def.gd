@@ -51,3 +51,18 @@ class_name AbilityDef extends Resource
 @export var damage_dice_count: int = 1
 @export var damage_dice_sides: int = 8
 @export var damage_modifier: int = 0
+
+# === Heal ===
+## Optional heal payload. When `heal_dice_count > 0` the ability is
+## treated as a heal — UseAbilityCommand skips the attack roll entirely
+## and applies (heal_dice_count d heal_dice_sides) + heal_modifier as
+## healing (clamped at max_hp), emitting a HEALED event.
+##
+## A heal ability typically also has zero damage dice (the two are
+## mutually exclusive by convention), but nothing structurally enforces
+## that. If both are set, the dispatch in UseAbilityCommand currently
+## takes the heal path. Hybrid abilities (damage + self-heal) would
+## need a richer dispatch — defer until that's a real requirement.
+@export var heal_dice_count: int = 0
+@export var heal_dice_sides: int = 0
+@export var heal_modifier: int = 0

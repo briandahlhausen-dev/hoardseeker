@@ -643,6 +643,42 @@ The single-target convenience constructor `UseAbilityCommand.new(actor, ability,
 
 ---
 
+## 2026-05-10 — AbilityDef heal path: dispatch on `heal_dice_count > 0`; no targeting enum yet
+
+**Status**: Decided
+
+**Context**: Phase C added `fighter_second_wind` — a self-target heal. The chunk-3/5 architecture handles "any actor (including self) targeted by `target_id`" cleanly (caller passes their own actor_id), but the **resolution** was wrong for a heal: existing code did attack-roll-vs-target-AC, which makes no sense for a self-heal. Three reasonable shapes for the fix:
+
+- (a) **Heal fields on AbilityDef + dispatch on `heal_dice_count > 0`**. New fields: `heal_dice_count`, `heal_dice_sides`, `heal_modifier`. `UseAbilityCommand._resolve_against_target` dispatches: heal path (no attack roll, roll heal dice, apply up to max_hp, emit HEALED) or damage path (existing).
+- (b) **`targeting: String` enum on AbilityDef** ("single_enemy", "multi_enemy", "self", "ally", etc.). Dispatch in apply() on the enum value. More general — handles non-heal self/ally abilities (buffs, debuffs).
+- (c) **Separate command type**: `HealCommand` instead of `UseAbilityCommand` for healing. Rejected at chunk-3 / chunk-5 design time (one command type with dispatch beats hierarchy).
+
+**Decision**: Approach (a). New `heal_dice_count` / `heal_dice_sides` / `heal_modifier` fields on `AbilityDef`. Default to 0 (no heal); dispatch in `_resolve_against_target` checks `def.heal_dice_count > 0`. If true, take heal path; otherwise damage path. No `targeting` enum yet.
+
+Plus an ergonomic `UseAbilityCommand.self_target(actor, ability)` factory — sugar over `new(actor, ability, actor)`.
+
+**Rationale**:
+- The actual *axis of variation* in this chunk is "damage vs heal," not "self vs enemy targeting." `fighter_second_wind` happens to be self-target, but a future "Cure Wounds" might be ally-target with the same heal mechanic. Dispatching on heal-vs-damage captures the real distinction; targeting (self vs enemy) is just a function call argument.
+- A `targeting` enum is the obvious next step *when buffs/debuffs need it* — non-heal self-or-ally effects (Bless, Shield, Hex). At that point we'd add the enum without restructuring this dispatch. Adding it speculatively now is over-design.
+- Keeping the dispatch in one helper (`_resolve_against_target` → `_resolve_heal` or `_resolve_attack`) means adding new effect categories (buff, summon, etc.) is a new branch, not a new command class. Same maintainability shape as the chunk-8 status-effect dispatch.
+
+**Trade-offs**:
+- "Hybrid" abilities that both damage AND heal in one effect (e.g., a vampire-touch ability) currently take only the heal branch. If that pattern arrives, dispatch needs a third option ("hybrid: damage AND heal"). Documented in `use_ability_command.gd`.
+- Heals don't currently distinguish "needs to be in range" from self-target. If/when ranged heals exist, range/positioning rules (deferred broadly) need to apply to the heal path too.
+- The `requested` field on the HEALED event is a debugging/UX nicety (renderer can show "healed for X / 10" instead of just "healed for 6 (capped)"). Adds two ints to the event payload; cheap but worth knowing about.
+
+**Load-bearing files**:
+- [src/content/abilities/ability_def.gd](hoardseeker/src/content/abilities/ability_def.gd) — three new heal fields with `0` defaults preserving back-compat.
+- [src/systems/combat/use_ability_command.gd](hoardseeker/src/systems/combat/use_ability_command.gd) — `_resolve_heal` and `_resolve_attack` extracted; dispatch in `_resolve_against_target`. `self_target()` factory.
+- [src/content/abilities/fighter_second_wind.tres](hoardseeker/src/content/abilities/fighter_second_wind.tres) — first heal ability.
+
+**Revisit if**:
+- An ability needs to BOTH damage AND heal (vampire-touch, life-leech) — extend dispatch with hybrid arm.
+- Non-heal self-or-ally abilities arrive (buffs, summons) — add `targeting` enum at that point. The current shape doesn't preclude it.
+- Heal sources beyond abilities arrive (regenerate already does heals; potions / consumables / passive auras might too) — likely centralize the "apply heal" logic into a helper that all heal paths (UseAbilityCommand, status_effects, etc.) share.
+
+---
+
 ## Open questions (not yet decided)
 
 These need to be revisited as the slice progresses:

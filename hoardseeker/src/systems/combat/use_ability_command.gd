@@ -76,6 +76,12 @@ static func multi_target(p_actor_id: String, p_ability_id: String, p_target_ids:
 	return cmd
 
 
+## Self-target convenience factory. The actor and the (sole) target are
+## the same. Used for self-heals (Second Wind), self-buffs, etc.
+static func self_target(p_actor_id: String, p_ability_id: String) -> UseAbilityCommand:
+	return UseAbilityCommand.new(p_actor_id, p_ability_id, p_actor_id)
+
+
 func validate(state: Resource) -> bool:
 	var attacker: Resource = state.find_actor(actor_id)
 	if attacker == null:
@@ -126,9 +132,60 @@ func apply(state: Resource) -> Array[GameEvent]:
 	return events
 
 
-## Resolve one attack-and-damage exchange against a single target.
-## Appends the resulting events to `events`. Mutates target.hp on hit.
+## Resolve one ability-vs-target exchange. Dispatches on def shape:
+##   - heal_dice_count > 0  → heal path (no attack roll, apply healing)
+##   - otherwise             → damage path (attack roll, damage on hit)
+##
+## Hybrid abilities (damage + heal in one ability) currently take only
+## the heal branch; if that ever matters, expand the dispatch.
 func _resolve_against_target(
+	state: Resource,
+	def: AbilityDef,
+	target: Resource,
+	target_id: String,
+	events: Array[GameEvent],
+) -> void:
+	if def.heal_dice_count > 0:
+		_resolve_heal(state, def, target, target_id, events)
+	else:
+		_resolve_attack(state, def, target, target_id, events)
+
+
+## Heal resolution: roll heal dice, apply up to max_hp, emit HEALED.
+## No attack roll — heals don't miss. The target may already be at full
+## HP, in which case the actual heal is 0 and HEALED still fires with
+## amount=0 (renderers can ignore zero-amount HEALED if they want).
+func _resolve_heal(
+	state: Resource,
+	def: AbilityDef,
+	target: Resource,
+	target_id: String,
+	events: Array[GameEvent],
+) -> void:
+	var heal_dice: Array[int] = state.rng.roll_dice(def.heal_dice_count, def.heal_dice_sides)
+	var heal_total: int = def.heal_modifier
+	for d in heal_dice:
+		heal_total += d
+	heal_total = max(0, heal_total)
+
+	# Clamp to max_hp; if already at full HP, heal nothing.
+	var actual: int = min(heal_total, target.max_hp - target.hp)
+	if actual > 0:
+		target.hp += actual
+
+	events.append(GameEvent.new("HEALED", {
+		"actor": actor_id,
+		"target": target_id,
+		"ability": ability_id,
+		"amount": actual,
+		"requested": heal_total,
+	}))
+
+
+## Damage resolution: attack roll, damage roll if hit, emit events.
+## This is the chunk-3 path — extracted into its own function only so the
+## chunk-C heal dispatch can sit alongside it cleanly.
+func _resolve_attack(
 	state: Resource,
 	def: AbilityDef,
 	target: Resource,
