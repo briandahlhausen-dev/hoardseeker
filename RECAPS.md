@@ -32,3 +32,37 @@
   - Phase 1 (combat core, weeks 2-5 per `ROADMAP.md`): concrete `AttackCommand`, `UseAbilityCommand`, `EndTurnCommand`; `CommandProcessor`; turn order math; first ability + first monster (skeleton) with simple AI; scripted-fight headless test.
   - Possibly: `gh auth login` for automation (so I can verify CI status without bothering user).
   - LLC formation as a low-engagement parallel administrative task (Month 1-2 priority per `VIBE_CODING.md`).
+
+---
+
+## 2026-05-10 (Sun) — Week 1 close (Phase 1 architecture complete)
+
+- **What shipped** (9 chunks, 18 merge commits to `main` over Friday + Saturday + Sunday):
+  - **Phase 1 architectural primitives**, all with unit + integration tests:
+    - `AttackCommand` (raw-attack primitive, chunk 2 PvP-style → chunk 5 multi-target via UseAbilityCommand)
+    - `EndTurnCommand` (turn rotation + AP refresh + chunk-8 status-effect tick)
+    - `CommandProcessor` (the only state mutator; logical timestamp from event_log size)
+    - `UseAbilityCommand` (single + multi-target via target_ids list)
+    - `ApplyStatusEffectCommand`
+    - `GameState`, `PlayerState`, `MonsterState` (+ `find_actor()` returning untyped Resource — sibling resources, no CombatantState base class)
+    - `RNGService` redesigned mid-week to be duplicate-safe via persisted `rng_state` (caught real bug while writing replay test)
+    - `EventLog` with deterministic `replay()` round-tripping the full pipeline
+    - `AbilityDef` data class + `target_count` for multi-target → `fighter_slash`, `fighter_cleave`, `fighter_power_strike` `.tres`
+    - `MonsterDef` data class + `spawn_monster_state()` factory → `skeleton_warrior.tres` + chunk-9 fixture migration across 4 test files
+    - `StatusEffect` data class + dispatch-on-effect_id ticking → stun (other effects are stub branches)
+  - **Test surface**: 12 test files green on every push since 2026-05-08. Coverage includes 50-seed determinism gate, 30-seed replay round-trip, full-fight integration test composing all four concrete Commands through replay.
+  - **Captures discipline held**: every chunk that surfaced a real architectural call shipped its own DECISIONS entry in the same commit. IDEAS.md picked up two deferred-design entries (monster turn flow; status effect ability integration / stacking / save throws).
+- **What got hard**:
+  - The replay test surfaced a non-obvious RNGService bug — `Resource.duplicate(true)` shallow-copies the non-`@export`'d `_rng` field, so original and copy shared a single PRNG. Caught it via 30-line diagnostic. Considered call-counter-based reconstruction first; rejected (Godot's `randi_range` uses rejection sampling so call counts can't reproduce state). Final fix: persist `rng_state` directly, build fresh PRNG per call.
+  - `gh pr merge --delete-branch` from a worktree fails because it tries to switch the local checkout to `main`, which is held by the parent worktree. Documented in TECH_DEBT.md with the `--delete-branch=false` + `git fetch --prune` workaround.
+  - Sound-alert hook: first attempt used `SystemSounds.Asterisk.Play()` which silently does nothing if Windows sound scheme has Asterisk set to "(None)". Switched to `SoundPlayer.PlaySync()` on a real `.wav`. Took two iterations to land on Ring01.wav.
+- **What surprised me**:
+  - The data-driven content rule (`.tres` not code) actually held under pressure. `fighter_power_strike` shipped as pure-data — zero code change. `fighter_cleave` did force a small refactor (target_count on def + target_ids on command), but that's the right kind of pressure: discover the architectural extension at the smallest second-ability that demands it, not later when 5 single-target abilities have hardened the pattern.
+  - Status effects came out smaller than expected. Generic `StatusEffect` resource + `match` dispatch in `EndTurnCommand._tick_status_effects()` is simpler than a class hierarchy and has clear revisit thresholds.
+  - The full-fight integration test (chunk 6) caught my own snapshot mistake — I tried to compare `event_log.commands.size()` post-replay and got correctly-failing tests. Realized `EventLog.replay` doesn't re-append to the new state's log (the log is the input, not the output). Captured the clarification in `event_log.gd`'s docstring.
+- **How I felt**: _(user fills in)_
+- **What's next week**:
+  - **Resolve the IDEAS.md design questions** (monster turn flow + status-effect / ability integration / stacking / save throws). Both block real architectural work; both are short conversations.
+  - Once unblocked: skeleton AI (monster turn-end mechanism), then `fighter_shield_bash` as the first ability that applies an effect on hit.
+  - More content authoring as desired (more abilities via `.tres`, more monster defs).
+  - Phase 2 prep starts when architecture extensions slow down — combat scene UI, dice-roll animation, the centerpiece dice-feel polish per `ROADMAP.md` Phase 2.
