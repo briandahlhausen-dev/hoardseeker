@@ -21,6 +21,7 @@ const AbilityDef = preload("res://src/content/abilities/ability_def.gd")
 const FIGHTER_SLASH_PATH := "res://src/content/abilities/fighter_slash.tres"
 const FIGHTER_CLEAVE_PATH := "res://src/content/abilities/fighter_cleave.tres"
 const FIGHTER_POWER_STRIKE_PATH := "res://src/content/abilities/fighter_power_strike.tres"
+const FIGHTER_SECOND_WIND_PATH := "res://src/content/abilities/fighter_second_wind.tres"
 
 
 func run_tests() -> Array[String]:
@@ -32,6 +33,9 @@ func run_tests() -> Array[String]:
 	failures.append_array(_test_fighter_cleave_canonical_stats())
 	failures.append_array(_test_fighter_power_strike_canonical_stats())
 	failures.append_array(_test_target_count_defaults_to_one())
+	# Phase C — heal-path coverage on the data side
+	failures.append_array(_test_heal_fields_default_to_zero())
+	failures.append_array(_test_fighter_second_wind_canonical_stats())
 	return failures
 
 
@@ -163,3 +167,50 @@ func _test_target_count_defaults_to_one() -> Array[String]:
 	if def.target_count != 1:
 		return ["target_count_default: fighter_slash should default to target_count=1 (the .tres pre-dates the field), got %d" % def.target_count]
 	return []
+
+
+# Heal fields default to 0 (no heal). Damage abilities (slash, cleave,
+# power_strike) pre-date the heal fields; the dispatch in
+# UseAbilityCommand checks heal_dice_count > 0 to take the heal path,
+# so this default keeps existing damage abilities on the damage path.
+func _test_heal_fields_default_to_zero() -> Array[String]:
+	var def: AbilityDef = AbilityDef.new()
+	var failures: Array[String] = []
+	if def.heal_dice_count != 0:
+		failures.append("heal_default: heal_dice_count should default to 0, got %d" % def.heal_dice_count)
+	if def.heal_dice_sides != 0:
+		failures.append("heal_default: heal_dice_sides should default to 0, got %d" % def.heal_dice_sides)
+	if def.heal_modifier != 0:
+		failures.append("heal_default: heal_modifier should default to 0, got %d" % def.heal_modifier)
+
+	# Sanity: existing damage .tres files (which don't set heal fields)
+	# still have heal_dice_count == 0, so the dispatch routes them to the
+	# damage path correctly.
+	var slash: AbilityDef = load(FIGHTER_SLASH_PATH) as AbilityDef
+	if slash.heal_dice_count != 0:
+		failures.append("heal_default: fighter_slash.tres should have heal_dice_count=0, got %d" % slash.heal_dice_count)
+	return failures
+
+
+# fighter_second_wind: 1 AP, self-target, 1d10 healing per the D&D 5e
+# Fighter feature. Damage fields are 0 (the heal-vs-damage dispatch
+# in UseAbilityCommand routes by heal_dice_count > 0).
+func _test_fighter_second_wind_canonical_stats() -> Array[String]:
+	var def: AbilityDef = load(FIGHTER_SECOND_WIND_PATH) as AbilityDef
+	var failures: Array[String] = []
+	if def == null:
+		failures.append("second_wind: fighter_second_wind.tres failed to load")
+		return failures
+	if def.id != "fighter_second_wind":
+		failures.append("second_wind: id should be 'fighter_second_wind', got '%s'" % def.id)
+	if def.ap_cost != 1:
+		failures.append("second_wind: ap_cost should be 1, got %d" % def.ap_cost)
+	if def.target_count != 1:
+		failures.append("second_wind: target_count should be 1 (self-target uses 1 target slot), got %d" % def.target_count)
+	if def.heal_dice_count != 1:
+		failures.append("second_wind: heal_dice_count should be 1, got %d" % def.heal_dice_count)
+	if def.heal_dice_sides != 10:
+		failures.append("second_wind: heal_dice_sides should be 10 (1d10 per D&D 5e), got %d" % def.heal_dice_sides)
+	if def.damage_dice_count != 0:
+		failures.append("second_wind: damage_dice_count should be 0 (it's a heal), got %d" % def.damage_dice_count)
+	return failures

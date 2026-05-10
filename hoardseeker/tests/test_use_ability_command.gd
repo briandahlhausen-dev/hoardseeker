@@ -53,6 +53,13 @@ func run_tests() -> Array[String]:
 	failures.append_array(_test_cleave_apply_decrements_ap_only_once())
 	failures.append_array(_test_cleave_apply_emits_per_target_events())
 	failures.append_array(_test_cleave_apply_deterministic())
+	# Phase C — heal path coverage (fighter_second_wind)
+	failures.append_array(_test_self_target_factory_constructs_command())
+	failures.append_array(_test_second_wind_validates_when_fighter_knows_it())
+	failures.append_array(_test_second_wind_heals_caster())
+	failures.append_array(_test_second_wind_caps_heal_at_max_hp())
+	failures.append_array(_test_second_wind_emits_healed_event_no_attack_roll())
+	failures.append_array(_test_second_wind_decrements_ap())
 	return failures
 
 
@@ -386,3 +393,140 @@ func _test_cleave_apply_deterministic() -> Array[String]:
 	if sa.find_monster("skel_2").hp != sb.find_monster("skel_2").hp:
 		failures.append("cleave_deterministic: skel_2 HP differs (a=%d, b=%d)" % [sa.find_monster("skel_2").hp, sb.find_monster("skel_2").hp])
 	return failures
+
+
+# --- Phase C: heal path (fighter_second_wind) ---
+
+# Build a state with a wounded fighter who knows fighter_second_wind.
+# Helper used by all the heal-path tests.
+func _make_heal_state(
+	fighter_hp: int = 5,
+	fighter_max_hp: int = 20,
+	attacker_ap: int = 3,
+	known_abilities: Array[String] = ["fighter_second_wind"],
+	seed_val: int = 42,
+) -> GameState:
+	var gs: GameState = GameState.new()
+	gs.seed = seed_val
+	gs.rng = RNGService.new(seed_val)
+	gs.event_log = EventLog.new()
+	gs.event_log.seed = seed_val
+
+	var fighter: PlayerState = PlayerState.new()
+	fighter.actor_id = "fighter_1"
+	fighter.hp = fighter_hp
+	fighter.max_hp = fighter_max_hp
+	fighter.ac = 16
+	fighter.action_points = attacker_ap
+	fighter.max_action_points = 3
+	fighter.ability_ids = known_abilities
+	gs.players.append(fighter)
+	gs.current_encounter = EncounterState.new()
+	return gs
+
+
+# self_target() factory wraps actor_id as the sole target. Caller doesn't
+# have to remember the "pass own actor_id as third arg" pattern.
+func _test_self_target_factory_constructs_command() -> Array[String]:
+	var cmd: UseAbilityCommand = UseAbilityCommand.self_target("fighter_1", "fighter_second_wind")
+	var failures: Array[String] = []
+	if cmd.actor_id != "fighter_1":
+		failures.append("self_target: actor_id wrong, got '%s'" % cmd.actor_id)
+	if cmd.target_ids.size() != 1:
+		failures.append("self_target: target_ids should have 1 element, got %d" % cmd.target_ids.size())
+	elif cmd.target_ids[0] != "fighter_1":
+		failures.append("self_target: target_ids[0] should match actor_id, got '%s'" % cmd.target_ids[0])
+	if cmd.ability_id != "fighter_second_wind":
+		failures.append("self_target: ability_id wrong, got '%s'" % cmd.ability_id)
+	return failures
+
+
+# Self-target heal validates correctly — the actor IS the target, target
+# alive (fighter has hp > 0), AP sufficient, ability known.
+func _test_second_wind_validates_when_fighter_knows_it() -> Array[String]:
+	var state: GameState = _make_heal_state()
+	var cmd: UseAbilityCommand = UseAbilityCommand.self_target("fighter_1", "fighter_second_wind")
+	if not cmd.validate(state):
+		return ["second_wind_validate: should pass with known ability + alive caster + sufficient AP"]
+	return []
+
+
+# apply() restores HP. Wounded fighter (5/20) heals by 1d10 (1-10) and
+# gets capped at max_hp. The exact value is RNG-driven; we just assert
+# the HP went UP and stayed in range.
+func _test_second_wind_heals_caster() -> Array[String]:
+	var state: GameState = _make_heal_state(5, 20)
+	var cmd: UseAbilityCommand = UseAbilityCommand.self_target("fighter_1", "fighter_second_wind")
+	cmd.apply(state)
+
+	var fighter: PlayerState = state.find_player("fighter_1")
+	var failures: Array[String] = []
+	if fighter.hp <= 5:
+		failures.append("second_wind_heal: HP should have increased from 5, got %d" % fighter.hp)
+	if fighter.hp > 20:
+		failures.append("second_wind_heal: HP should not exceed max_hp 20, got %d" % fighter.hp)
+	# Heal range with 1d10 (no modifier): 1..10. 5 + roll, capped at 20.
+	# So result must be in [6, 15] (since 5 + 1 = 6 minimum, 5 + 10 = 15 max).
+	if fighter.hp < 6 or fighter.hp > 15:
+		failures.append("second_wind_heal: HP should be in [6, 15] for 1d10 from 5, got %d" % fighter.hp)
+	return failures
+
+
+# Heal at full HP: no-op for HP, but HEALED event still fires with
+# amount=0 (renderer can ignore). The "requested" field captures the
+# intended heal amount before clamping.
+func _test_second_wind_caps_heal_at_max_hp() -> Array[String]:
+	var state: GameState = _make_heal_state(20, 20)  # already at full HP
+	var cmd: UseAbilityCommand = UseAbilityCommand.self_target("fighter_1", "fighter_second_wind")
+	var events: Array[GameEvent] = cmd.apply(state)
+
+	var failures: Array[String] = []
+	var fighter: PlayerState = state.find_player("fighter_1")
+	if fighter.hp != 20:
+		failures.append("second_wind_cap: HP should stay at 20 (max), got %d" % fighter.hp)
+
+	# The HEALED event should have amount=0 and requested>0
+	var saw_capped: bool = false
+	for evt in events:
+		if evt.event_type == "HEALED" and evt.data.get("target") == "fighter_1":
+			if evt.data.get("amount") == 0 and evt.data.get("requested", 0) > 0:
+				saw_capped = true
+				break
+	if not saw_capped:
+		failures.append("second_wind_cap: expected HEALED with amount=0 and requested>0")
+	return failures
+
+
+# Heal path emits HEALED but NOT DICE_ROLLED-for-attack — heals don't
+# do attack rolls. (They DO consume RNG for the heal dice, but the
+# attack-roll DICE_ROLLED with type=attack should not fire.)
+func _test_second_wind_emits_healed_event_no_attack_roll() -> Array[String]:
+	var state: GameState = _make_heal_state(5, 20)
+	var cmd: UseAbilityCommand = UseAbilityCommand.self_target("fighter_1", "fighter_second_wind")
+	var events: Array[GameEvent] = cmd.apply(state)
+
+	var saw_healed: bool = false
+	var saw_attack_roll: bool = false
+	for evt in events:
+		if evt.event_type == "HEALED" and evt.data.get("ability") == "fighter_second_wind":
+			saw_healed = true
+		if evt.event_type == "DICE_ROLLED" and evt.data.get("type") == "attack":
+			saw_attack_roll = true
+
+	var failures: Array[String] = []
+	if not saw_healed:
+		failures.append("second_wind_events: no HEALED event for fighter_second_wind")
+	if saw_attack_roll:
+		failures.append("second_wind_events: heal path should NOT emit attack-roll DICE_ROLLED")
+	return failures
+
+
+# AP cost still pays. Second Wind costs 1 AP; fighter starts at 3, ends at 2.
+func _test_second_wind_decrements_ap() -> Array[String]:
+	var state: GameState = _make_heal_state(5, 20, 3)
+	var cmd: UseAbilityCommand = UseAbilityCommand.self_target("fighter_1", "fighter_second_wind")
+	cmd.apply(state)
+	var fighter: PlayerState = state.find_player("fighter_1")
+	if fighter.action_points != 2:
+		return ["second_wind_ap: expected AP 2 (3 - 1), got %d" % fighter.action_points]
+	return []

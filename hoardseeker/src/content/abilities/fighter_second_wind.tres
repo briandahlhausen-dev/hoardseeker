@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="AbilityDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/abilities/ability_def.gd" id="1_ability_def"]
+
+[resource]
+script = ExtResource("1_ability_def")
+id = "fighter_second_wind"
+name_string_id = "ability_fighter_second_wind_name"
+description_string_id = "ability_fighter_second_wind_description"
+ap_cost = 1
+target_count = 1
+attack_modifier = 0
+damage_dice_count = 0
+damage_dice_sides = 0
+damage_modifier = 0
+heal_dice_count = 1
+heal_dice_sides = 10
+heal_modifier = 0
