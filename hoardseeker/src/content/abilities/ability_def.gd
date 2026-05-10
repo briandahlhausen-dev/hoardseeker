@@ -74,6 +74,28 @@ class_name AbilityDef extends Resource
 @export var heal_dice_sides: int = 0
 @export var heal_modifier: int = 0
 
+# === Save throw (chunk-L) ===
+## When `save_type` is non-empty, the ability's effect-application path
+## rolls a save against the target. The save is computed as
+## target.stats.get(save_type, 0) + d20 vs save_dc. If the total >=
+## save_dc, the save SUCCEEDS.
+##
+## On save success: if `save_negates_effect` is true, the declared
+## effects are NOT applied to that target. Damage / heal still resolves
+## normally — saves only gate effect application, not the underlying
+## damage/heal payload. The "save halves damage" pattern is a future
+## need, not yet implemented (revisit per the chunk-L DECISIONS entry).
+##
+## Empty `save_type` (default) means "no save" — effects apply
+## unconditionally on hit/heal. Existing damage and heal abilities
+## (slash, cleave, second_wind, etc.) keep working unchanged.
+##
+## Stat values in actor.stats are SAVE MODIFIERS (signed ints), not
+## raw ability scores. See PlayerState/MonsterState `stats` doc.
+@export var save_type: String = ""           # e.g. "CON", "DEX", "WIS"
+@export var save_dc: int = 0
+@export var save_negates_effect: bool = true
+
 # === Status effects to apply on success ===
 ## Effects to apply to each target after a successful damage / heal.
 ## "Success" means the damage hit (not missed) OR the heal landed

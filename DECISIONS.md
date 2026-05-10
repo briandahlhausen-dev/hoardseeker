@@ -916,6 +916,53 @@ Permanent effects (`duration_remaining == -1`) are sticky: if either the existin
 
 ---
 
+## 2026-05-10 — Save throws live on AbilityDef; saves gate effect application, not damage
+
+**Status**: Decided. Resolves the 2026-05-10 IDEAS entry sub-question on save throws.
+
+**Context**: With ability-applies-effects landing in Phase K, abilities like `fighter_shield_bash` ("1d4 damage + STUN on save fail (DC 14 CON)") need a save mechanic. IDEAS options:
+- (a) Save fields on AbilityDef.
+- (b) Save fields on the StatusEffect.
+- (c) New wrapping `ApplySaveOrEffectCommand`.
+
+**Decision**: Option (a). Save fields on AbilityDef:
+- `save_type: String = ""` — empty = no save, ability skips the save-throw check entirely
+- `save_dc: int = 0` — DC the target rolls against
+- `save_negates_effect: bool = true` — on save success, declared effects are NOT applied (damage/heal still lands)
+
+UseAbilityCommand's `_apply_declared_effects` rolls the save when `save_type != ""`:
+- Save total = `target.stats.get(save_type, 0) + state.rng.roll(20)`
+- If `total >= save_dc`, save SUCCEEDS
+- On success + `save_negates_effect=true`, effects are skipped
+- `SAVE_ROLLED` event always fires when a save is attempted, with all roll components
+
+**Rationale**:
+- The save is *how this ability applies its effect*, not part of the effect itself. Same `stun` effect is applied without save by one ability and with save by another. Fields belong on the def.
+- Save mechanic is purely additive: existing damage abilities (slash, cleave, etc.) have `save_type = ""` and behave exactly as before. Existing heal abilities likewise.
+- D&D 5e math: stat-modifier + d20 vs DC. Stats stored as save modifiers (signed ints) directly — no raw-score-to-modifier conversion needed at runtime. PlayerState/MonsterState `stats: Dictionary` carries the modifiers; default-0 lookup handles unset stats gracefully.
+- `save_negates_effect` is the common case (D&D's "on save fail, target is stunned"). The "save halves damage" pattern (e.g., burning_hands) is a future need that can extend the dispatch with `save_halves_damage: bool` or similar.
+
+**Implementation note (back-compat)**: introducing `_apply_declared_effects(state, def, target, target_id, events)` (added `state` as new first arg vs the chunk-K signature) was needed for the save roll's RNG access. Internal helper, no public API impact.
+
+**Trade-offs**:
+- Half-damage-on-save and partial-effect-on-save not yet supported. The `save_negates_effect` boolean is a coarse switch. Future revisit: add a richer save outcome enum (`negates`, `halves_damage`, `halves_damage_and_negates_effect`, `weakens_effect`).
+- Saves only roll for ability-applied effects, not for direct ApplyStatusEffectCommand. The latter currently always applies (no save). When environmental hazards (traps, etc.) need saves, ApplyStatusEffectCommand will likely gain a parallel save mechanism. Currently every ApplyStatusEffectCommand path is direct-application-no-save by intent; flagging here.
+- Stat values must be authored as MODIFIERS, not raw ability scores. Cognitive cost for designers familiar with D&D's "score 14 = +2 mod." Documented in actor `stats` field comments.
+
+**Load-bearing files**:
+- [src/content/abilities/ability_def.gd](hoardseeker/src/content/abilities/ability_def.gd) — `save_type`, `save_dc`, `save_negates_effect` fields with no-save defaults.
+- [src/systems/combat/use_ability_command.gd](hoardseeker/src/systems/combat/use_ability_command.gd) — save roll in `_apply_declared_effects`. SAVE_ROLLED event.
+- [src/core/player_state.gd](hoardseeker/src/core/player_state.gd) and [src/core/monster_state.gd](hoardseeker/src/core/monster_state.gd) — `stats` field documented as save modifiers.
+- [src/content/abilities/fighter_shield_bash.tres](hoardseeker/src/content/abilities/fighter_shield_bash.tres) — first ability that ships with save fields populated.
+
+**Revisit if**:
+- Half-damage-on-save needed (D&D's burning_hands shape).
+- Partial-effect outcomes needed (e.g., "on save success, stun is reduced from 3 turns to 1").
+- ApplyStatusEffectCommand gains save semantics (currently direct-application only).
+- Stat conversion complexity grows (e.g., "expertise" or proficiency bonuses) — modifier-only model may need stat-score conversion at the lookup site.
+
+---
+
 ## Open questions (not yet decided)
 
 These need to be revisited as the slice progresses:

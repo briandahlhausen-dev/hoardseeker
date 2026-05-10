@@ -8,7 +8,13 @@
 
 ---
 
-## 2026-05-09 — Monster turn flow: shared AP refresh with players, or separate mechanism?
+## 2026-05-09 — Monster turn flow: shared AP refresh with players, or separate mechanism? ✅ RESOLVED 2026-05-10
+
+**Resolution**: Decided — Approach A (shared AP-driven turns). See DECISIONS.md 2026-05-10 entry "Monster turn flow." Implemented in Phase J (`MonsterAI` helper, `EndTurnCommand` AP-refresh extends to monsters via `find_actor`).
+
+---
+
+## 2026-05-09 — Monster turn flow [original entry, kept for context]
 
 **What it is**: When monster AI lands, monsters will need *some* turn-start logic. Open question: does that logic share the AP-refresh path that `EndTurnCommand` currently runs for players (extending it to handle monsters via `find_actor` rather than `find_player`), or do monsters use an entirely separate mechanism (e.g., AI-driven action selection without an explicit AP budget)?
 
@@ -25,7 +31,16 @@ If "yes" to two or more, share the path. If "no" to all three, separate mechanis
 
 ---
 
-## 2026-05-10 — Status effects: ability integration, stacking rules, save throws
+## 2026-05-10 — Status effects: ability integration, stacking rules, save throws ✅ RESOLVED 2026-05-10
+
+**Resolution**: All three sub-questions decided. See DECISIONS.md 2026-05-10 entries:
+- Ability integration → "AbilityDef.applies_effects (full effects inline)" — implemented in Phase K
+- Stacking → "refresh duration on same effect_id" — implemented in Phase K
+- Save throws → "AbilityDef save fields; saves gate effect, not damage" — implemented in Phase L (with `fighter_shield_bash` as first ability)
+
+---
+
+## 2026-05-10 — Status effect questions [original entry, kept for context]
 
 **What it is**: Three deferred design questions that all sit on top of the chunk-8 status-effect architecture.
 

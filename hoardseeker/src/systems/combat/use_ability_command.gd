@@ -182,7 +182,7 @@ func _resolve_heal(
 	}))
 
 	# Heals don't fail; always apply declared status effects.
-	_apply_declared_effects(def, target, target_id, events)
+	_apply_declared_effects(state, def, target, target_id, events)
 
 
 ## Damage resolution: attack roll, damage roll if hit, emit events.
@@ -281,7 +281,7 @@ func _resolve_attack(
 			# On hit, apply declared status effects. Skip if target is
 			# defeated — applying stun to a corpse is meaningless and
 			# would clutter the log.
-			_apply_declared_effects(def, target, target_id, events)
+			_apply_declared_effects(state, def, target, target_id, events)
 	else:
 		events.append(GameEvent.new("ATTACK_MISSED", {
 			"actor": actor_id,
@@ -299,12 +299,40 @@ func _resolve_attack(
 ## def's array isn't aliased onto the target's status_effects — that
 ## would mean two skeletons cleaved by the same swing share effect state,
 ## which would break the chunk-7 "spawns are independent" property.
+##
+## When def.save_type is non-empty, rolls a save throw for the target.
+## On save success and save_negates_effect=true, all declared effects
+## are skipped for this target. SAVE_ROLLED event always fires when
+## a save is attempted; STATUS_APPLIED / STATUS_REFRESHED only fire
+## if effects are actually applied.
 func _apply_declared_effects(
+	state: Resource,
 	def: AbilityDef,
 	target: Resource,
 	target_id_for_event: String,
 	events: Array[GameEvent],
 ) -> void:
+	# Save throw check (chunk L) — only when the def declares one.
+	if def.save_type != "":
+		var save_modifier: int = target.stats.get(def.save_type, 0)
+		var save_natural: int = state.rng.roll(20)
+		var save_total: int = save_natural + save_modifier
+		var saved: bool = save_total >= def.save_dc
+
+		events.append(GameEvent.new("SAVE_ROLLED", {
+			"target": target_id_for_event,
+			"save_type": def.save_type,
+			"natural": save_natural,
+			"modifier": save_modifier,
+			"total": save_total,
+			"dc": def.save_dc,
+			"saved": saved,
+		}))
+
+		if saved and def.save_negates_effect:
+			# Save success negates effects — skip application entirely
+			return
+
 	for declared in def.applies_effects:
 		if declared == null:
 			continue
