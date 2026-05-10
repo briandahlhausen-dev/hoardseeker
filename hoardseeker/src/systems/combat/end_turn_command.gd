@@ -72,19 +72,19 @@ func apply(state: Resource) -> Array[GameEvent]:
 			round_num = state.current_encounter.round_number
 		events.append(GameEvent.new("ROUND_STARTED", {"round": round_num}))
 
-	# Refresh the new active actor's action points — player-only by design.
-	# Monsters don't yet take AP-driven actions, so a missing refresh on a
-	# monster is intentional, not stale code. Whether monster turns will
-	# share this AP path or use a separate mechanism is an open design
-	# question (see IDEAS.md), to be decided when monster AI lands.
-	var next_player: PlayerState = state.find_player(next_actor_id)
-	if next_player != null:
-		next_player.action_points = next_player.max_action_points
+	# Refresh the new active actor's action points. Both players AND
+	# monsters get the refresh — design call captured in the chunk-J
+	# DECISIONS entry ("Monster turn flow: A, share AP-driven turns").
+	# find_actor returns either kind; the duck-typed access works because
+	# both PlayerState and MonsterState have action_points / max_action_points.
+	var next_actor: Resource = state.find_actor(next_actor_id)
+	if next_actor != null:
+		next_actor.action_points = next_actor.max_action_points
 
 	# Tick status effects on the new active actor — both players AND monsters.
 	# Effects exist on either kind of actor, and stun/poison/etc. should
-	# affect monsters once monster AI lands. Resolved via find_actor (untyped).
-	var next_actor: Resource = state.find_actor(next_actor_id)
+	# affect monsters now that monster AI / AP refresh is wired up.
+	# (next_actor was already resolved above for AP refresh; reuse it.)
 	if next_actor != null:
 		_tick_status_effects(next_actor, next_actor_id, events)
 
