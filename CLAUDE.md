@@ -134,92 +134,74 @@ The user is non-technical and may not know what tools or services exist. When yo
 
 > Updated at end of every session. Empty if nothing in flight. Read first thing on session start.
 
-**Last updated**: 2026-05-09 (Sat) — session-end handoff to a different machine
+**Last updated**: 2026-05-10 (Sun) — Phase 1 architecture complete (week 1 close)
 
-### What we did this session (5 merges to `main`)
+### Where we are
+**Phase 1 architecture is done.** All foundational simulation primitives are in place and tested. The last 9 chunks (across Sat 2026-05-09 + Sun 2026-05-10) shipped every Phase-1 architectural piece per ROADMAP.md plus three follow-on additions (status effects, fixture migration, full-fight integration replay test).
 
-```
-b43f84c Merge phase-1-end-turn-command           ← EndTurnCommand
-2585fb8 Merge phase-1-command-processor          ← CommandProcessor (the spine)
-cc3579d Merge add-permissions-allowlist          ← .claude/settings.json
-f2c2eda Merge phase-1-attack-command             ← AttackCommand
-32fdb5c Merge add-tests-run-wrapper              ← tests/run.sh + run.bat
-```
+`main` is at `ace69d6` (post chunk-9 merge). Working tree clean. CI green on every push since 2026-05-08.
 
-Phase 1 progress: **AttackCommand → CommandProcessor → EndTurnCommand**, each landing on its own branch with passing tests + green CI.
-
-Plus a cluster of meta/operational work:
-- **`tests/run.sh` + `run.bat`** — wrap the `--import → test runner` two-step so fresh checkouts work without manual setup.
-- **gh CLI auth** done via device-flow OAuth on the local machine. Account: `briandahlhausen-dev`. Token scopes: `gist`, `read:org`, `repo`. Stored in OS keyring on the machine we're handing off FROM.
-- **`.claude/settings.json`** committed (project-shared) with a narrow allowlist for godot/test/registry calls. `.claude/settings.local.json` stays per-machine.
-- **Claude GitHub App** installed on `briandahlhausen-dev/hoardseeker` (separate from gh CLI auth — this is the claude.ai-side connection that lets Anthropic Cloud agents access the repo).
-- **Friday audit routine** created. ID: `trig_014n5heywcVN3czDASX9bhgL`. Cron `0 20 * * 5` (Fri 4pm EDT / 3pm EST). First run: **2026-05-15 around 4:05pm ET**. Opens a PR titled `Friday audit YYYY-MM-DD` against main with a RECAPS.md entry + audit findings; opens an `AUDIT-CRITICAL:` issue if it finds anything urgent. Manage at: https://claude.ai/code/routines/trig_014n5heywcVN3czDASX9bhgL
-
-### Test surface as of this handoff
-
-5 test files, 42 assertions, all green on `main`:
-- `test_rng_determinism` (8)
+### Test surface
+**12 test files green** on `main`:
+- `test_rng_determinism` (12 assertions, includes duplicate-safety regression tests)
 - `test_game_state_serialization` (7)
-- `test_attack_command` (11)
+- `test_attack_command` (11) — uses `find_actor` since chunk 2
 - `test_command_processor` (7)
 - `test_end_turn_command` (9)
+- `test_monster_state` (10)
+- `test_scripted_fight` (6 sub-tests, includes 50-seed determinism gate)
+- `test_ability_def` (7) — covers fighter_slash, fighter_cleave, fighter_power_strike
+- `test_use_ability_command` (18, includes multi-target coverage)
+- `test_replay` (6 sub-tests, includes 30-seed sweep + full-fight integration)
+- `test_monster_def` (6) — covers skeleton_warrior + spawn_monster_state contract
+- `test_status_effect` (13) — covers stun + tick mechanics
 
-Every push since `Merge add-ci` (2026-05-08) has been green. Verifiable any time via: `gh run list --limit 5 --repo briandahlhausen-dev/hoardseeker`.
+### What architecture exists
+- **Resources**: `GameState`, `PlayerState`, `MonsterState` (siblings, no CombatantState base — see DECISIONS), `AbilityDef`, `MonsterDef`, `StatusEffect`, `EventLog`, `RNGService` (duplicate-safe via persisted `rng_state`)
+- **Commands**: `AttackCommand`, `EndTurnCommand` (incl. status-effect tick), `UseAbilityCommand` (single + multi-target via `target_ids`), `ApplyStatusEffectCommand`. Processed via `CommandProcessor`; logged in `EventLog`.
+- **Content**: `fighter_slash.tres`, `fighter_cleave.tres`, `fighter_power_strike.tres`, `skeleton_warrior.tres`. All tests use the canonical defs via `MonsterDef.spawn_monster_state()` since chunk 9.
+- **Replay**: `EventLog.replay()` round-trips against fresh initial state. Full-fight test composes all four concrete Commands.
 
-### Where we paused
+### What's blocked (and what unblocks it)
+Two design questions in [IDEAS.md](IDEAS.md) gate the remaining real architectural work:
 
-Clean stopping point — no half-written code, no failing tests, no open branches. **Working tree clean on `main` at `b43f84c`** (well, plus this handoff commit when it lands).
+1. **Monster turn flow** (2026-05-09 entry): when monster AI lands, do monster turns share the AP-refresh path (extending `EndTurnCommand` via `find_actor`), or use a separate mechanism? Three decision-driving questions in the entry.
+2. **Status-effect / ability integration + stacking + save throws** (2026-05-10 entry): how does `AbilityDef` declare effects on hit? What happens when an effect is applied twice? Where does save-throw resolution live? All three unblock `fighter_shield_bash` (the next ability per CONTENT.md), so they likely land as a single follow-up design pass.
 
-Two unfinished sub-threads worth knowing about:
+### What needs to happen first when we resume
 
-1. **Mobile push / Dispatch setup is partial.** User installed the Claude mobile app and signed in on phone. Tried `/config` to enable push but got *"/config isn't available in this environment"* — they're not in the CLI variant where that command exists. The right path turns out to be **Dispatch** (Claude Desktop → Cowork → Dispatch in left sidebar → Get started → enable computer-wake → finish setup). Setup steps were given but not executed — user pivoted to handing off to a different machine before completing. Pick this up there if you want phone visibility.
+1. **Re-read [IDEAS.md](IDEAS.md)** — both entries spell out the questions concretely with decision-driving questions for each.
+2. **Engage the user on those questions** — don't pick the answers unilaterally; the user is the director per VIBE_CODING.md.
+3. **Once unblocked**: skeleton AI (monster turn-end mechanism), then `fighter_shield_bash` as the first effect-applying ability.
 
-2. **Autonomous-hour plan was queued but not started.** Before the machine handoff, the user was about to step out for ~1 hour and asked for a self-contained chunk of autonomous work. The proposed plan was:
-   - Chunk 1 (~25 min): `MonsterState` scaffold + `find_monster()` + `find_actor()` helpers on GameState + tests. Mirror PlayerState's pattern. No new architectural decisions (CombatantState base class deliberately NOT extracted — keep PlayerState/MonsterState as siblings; `find_actor` returns untyped Resource).
-   - Chunk 2 (~25 min): refactor `AttackCommand.find_player()` → `find_actor()` (mechanical, no logic change), then write `test_scripted_fight.gd` — Fighter-vs-Skeleton, multiple AttackCommands through the processor, verify deterministic outcome. This is the canonical "the architecture works for a real fight" test.
-   - Chunk 3 (stretch): test_runner.gd auto-discovery refactor (no manual registration per new test).
-   - This plan **was not executed** — user re-routed to handoff. The plan is the recommended next move, but only if you and the user agree it's still right.
-
-### What needs to happen first when we resume (on the new machine)
-
-**Step 0 — Bootstrap the new machine** (if not already done):
-- Clone repo: `git clone https://github.com/briandahlhausen-dev/hoardseeker.git`
-- Install Godot 4.6.2 (download from godotengine.org, extract somewhere stable)
-- Recreate the `godot` wrapper (CRITICAL: must point to the `_console.exe` variant on Windows for Git Bash stdout to work — see `TECH_DEBT.md` "Godot wrapper has two fragility points")
-- Install gh CLI + run `gh auth login` again (OAuth credentials are per-machine)
-- Run `bash hoardseeker/tests/run.sh` once to populate the `.godot/` cache and verify all tests pass (should be 5 files, 42 assertions, green)
-- `gh run list --limit 5 --repo briandahlhausen-dev/hoardseeker` to verify the live CI status matches the local
-
-**Step 1 — Confirm with user what to tackle.** The natural next code chunk (per the queued autonomous plan above) is `MonsterState` + first scripted-fight test. But the user may have shifted priorities at the handoff. State your understanding and confirm before writing code.
+If the user wants to keep moving without unblocking design, autonomous-friendly options:
+- More monster defs (`skeleton_archer.tres`, `zombie.tres`) — pure-data adds, low value
+- More ability defs that fit existing patterns — likewise
 
 ### Any blockers
-
-- None on the project itself. Architecture is solid, CI is green, Phase 1 is in motion.
-- The new-machine bootstrap above is a one-time cost, not a blocker.
+- None on the project itself. Architecture is solid, CI is green.
+- Two design calls in IDEAS.md gate the next architectural chunks; not "blockers" in the sense of broken state, but real ceilings on what the next chunk can be.
 
 ### Open admin items (tracked, not blocking)
-
 - LLC formation pending (Month 1-2 per `VIBE_CODING.md`)
 - Wacom tablet purchase pending (when art cleanup begins, ~Month 4-6)
 - `Hoardseeker - Copy` folder on user's old Desktop — legacy, user to decide
 - Pricing decision (~$14.99 vs $19.99) deferred to ~Month 14 per `DECISIONS.md`
-- `RECAPS.md` 2026-05-08 entry still has "How I felt" blank
-- `RECAPS.md` for the 2026-05-09 (Saturday) work hasn't been written yet — the Friday audit will likely catch this on its first run May 15
-- Dispatch setup partial (see "Where we paused")
+- `RECAPS.md` 2026-05-08 entry still has "How I felt" blank; 2026-05-10 entry (this session-end commit) also has the line blank
+- Dispatch / mobile push setup is partial (per TECH_DEBT.md). User has Stop-hook desktop sound working (Ring01.wav). Phone push still needs Dispatch via Claude Desktop → Cowork → Dispatch.
+- Friday audit routine (`trig_014n5heywcVN3czDASX9bhgL`) — first run **2026-05-15 around 4pm ET**; will open a PR titled `Friday audit YYYY-MM-DD` against main.
 
 ### Working memory worth carrying over (not in code or commits)
-
-- **Why CommandProcessor's logical timestamp is derived from `event_log.commands.size()` rather than a separate counter**: the log IS the source of truth. A separate counter would drift if commands ever got removed or replayed. See the new entry in `DECISIONS.md` if you want the full reasoning.
-- **Tests use `preload()` rather than `class_name`** because the class registry isn't built until `--import` runs. preload makes tests robust on fresh checkouts before the first `--import` pass. Already documented in test files, but flagging here so a future contributor doesn't "improve" the tests by switching to class_name.
-- **The 5-min cache TTL trap**: when polling for slow operations (CI, scheduled runs), prefer ~270s waits or 1200-1800s waits — not exactly 300s, which is the worst-of-both option (cache cold on resume + still feels too short).
-- **AttackCommand currently uses `find_player()`** — works for the placeholder PvP-style tests but will need to be `find_actor()` once MonsterState exists. This is what Chunk 2 of the queued autonomous plan addresses.
-- **The user is non-technical and only interacts via Claude.** They don't open VS Code manually, they don't run terminal commands themselves. Show diffs in responses for non-trivial edits; run tests yourself; never say "open the file and check." See the `user_workflow_claude_only.md` memory.
-- **The user wants Claude-time estimates, not human-dev hours.** When proposing chunks of work, say "~20 min Claude-time assuming you respond promptly." See the `feedback_estimates_use_claude_time.md` memory.
-- **Send `PushNotification` at end of every response that hands control back.** The user wants pings. See the `user_notification_sound.md` memory. Note: mobile push won't work on the new machine until Dispatch is set up there OR Remote Control is enabled.
+- **`gh pr merge --delete-branch` fails from a worktree**. Workaround: `--delete-branch=false` + `git fetch --prune`. See TECH_DEBT.md.
+- **Tests use `preload()` rather than `class_name`**. preload makes tests robust on fresh checkouts before the first `--import` pass.
+- **Run tests locally via `bash hoardseeker/tests/run.sh`** — wraps the `--import` step.
+- **The user is non-technical and only interacts via Claude.** They don't open VS Code manually, they don't run terminal commands themselves. See `user_workflow_claude_only.md` memory.
+- **The user wants Claude-time estimates, not human-dev hours.** See `feedback_estimates_use_claude_time.md` memory.
+- **Send `PushNotification` at end of every response that hands control back.** See `user_notification_sound.md` memory.
+- **EventLog.replay does NOT re-append commands/events to the replayed state's log** — the log is the input, not the output. Asserting log-size equality post-replay is a false-positive test pattern. Documented in `event_log.gd`.
+- **5-min cache TTL trap**: when polling for slow operations, prefer ~270s waits or 1200-1800s waits. 300s is the worst-of-both option.
 
 ### Branch / files involved
-
-- `main` is current. All session branches merged and deleted.
-- This handoff commit lands on a branch (`session-end-handoff-2026-05-09`) which gets merged to main as part of the handoff.
-- `IDEAS.md` still not created (no entries yet — none surfaced today either).
-- Companion files `RECAPS.md`, `TECH_DEBT.md`, `SESSION_PROTOCOL.md`, `LICENSE`, `README.md` all in place.
+- `main` is current at `ace69d6`. All chunk branches merged.
+- This session-end commit lands on `session-end-2026-05-10` and gets merged to main as part of session close.
+- All companion files in place: `RECAPS.md`, `TECH_DEBT.md`, `IDEAS.md`, `SESSION_PROTOCOL.md`.
