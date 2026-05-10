@@ -46,6 +46,14 @@ func run_tests() -> Array[String]:
 	failures.append_array(_test_permanent_effect_survives_tick())
 	failures.append_array(_test_unknown_effect_id_ticks_without_crashing())
 	failures.append_array(_test_multiple_effects_all_tick())
+	# Phase A — additional effect kinds
+	failures.append_array(_test_poison_damages_target_on_tick())
+	failures.append_array(_test_poison_can_defeat_target())
+	failures.append_array(_test_poison_with_zero_damage_is_noop())
+	failures.append_array(_test_slow_reduces_ap_after_refresh())
+	failures.append_array(_test_slow_floors_ap_at_zero())
+	failures.append_array(_test_regenerate_heals_capped_at_max_hp())
+	failures.append_array(_test_regenerate_does_not_revive_dead_actor())
 	return failures
 
 
@@ -389,4 +397,255 @@ func _test_multiple_effects_all_tick() -> Array[String]:
 	# stun fired before expiring — AP should be 0
 	if p2_after.action_points != 0:
 		return ["multi_tick: stun should have zeroed AP before expiring, got %d" % p2_after.action_points]
+	return []
+
+
+# --- Phase A: poison ---
+
+# Poison damages the target each tick; emits DAMAGE_DEALT with the
+# status-effect source so renderers can attribute the popup to poison.
+func _test_poison_damages_target_on_tick() -> Array[String]:
+	var state: GameState = _make_state()
+	var p2: PlayerState = PlayerState.new()
+	p2.actor_id = "fighter_2"
+	p2.hp = 20
+	p2.max_hp = 20
+	p2.ac = 16
+	p2.max_action_points = 3
+	state.players.append(p2)
+	state.turn_order = ["fighter_1", "fighter_2"]
+	state.active_actor_id = "fighter_1"
+
+	var poison: StatusEffect = StatusEffect.new()
+	poison.effect_id = "poison"
+	poison.duration_remaining = 3
+	poison.params = {"damage_per_turn": 3}
+	state.find_player("fighter_2").status_effects.append(poison)
+
+	var processor: CommandProcessor = CommandProcessor.new()
+	processor.process(EndTurnCommand.new("fighter_1"), state)
+
+	var failures: Array[String] = []
+	var p2_after: PlayerState = state.find_player("fighter_2")
+	if p2_after.hp != 17:
+		failures.append("poison_damage: expected HP 17 (20 - 3), got %d" % p2_after.hp)
+
+	# Verify DAMAGE_DEALT was emitted with poison source
+	var saw_poison_damage: bool = false
+	for evt in state.event_log.events:
+		if evt.event_type == "DAMAGE_DEALT" and evt.data.get("source") == "status_effect:poison":
+			if evt.data.get("amount") == 3 and evt.data.get("target") == "fighter_2":
+				saw_poison_damage = true
+				break
+	if not saw_poison_damage:
+		failures.append("poison_damage: no DAMAGE_DEALT event with poison source + correct amount/target")
+	return failures
+
+
+# Poison can take a target to 0 HP and emit ACTOR_DEFEATED — the
+# damage-over-time path needs the same defeat-detection as direct attacks.
+func _test_poison_can_defeat_target() -> Array[String]:
+	var state: GameState = _make_state()
+	var p2: PlayerState = PlayerState.new()
+	p2.actor_id = "fighter_2"
+	p2.hp = 2  # so 3 damage takes them to 0 (clamped)
+	p2.max_hp = 20
+	p2.ac = 16
+	p2.max_action_points = 3
+	state.players.append(p2)
+	state.turn_order = ["fighter_1", "fighter_2"]
+	state.active_actor_id = "fighter_1"
+
+	var poison: StatusEffect = StatusEffect.new()
+	poison.effect_id = "poison"
+	poison.duration_remaining = 1
+	poison.params = {"damage_per_turn": 3}
+	state.find_player("fighter_2").status_effects.append(poison)
+
+	var processor: CommandProcessor = CommandProcessor.new()
+	processor.process(EndTurnCommand.new("fighter_1"), state)
+
+	var failures: Array[String] = []
+	var p2_after: PlayerState = state.find_player("fighter_2")
+	if p2_after.hp != 0:
+		failures.append("poison_defeat: expected HP 0, got %d" % p2_after.hp)
+
+	var saw_defeated: bool = false
+	for evt in state.event_log.events:
+		if evt.event_type == "ACTOR_DEFEATED" and evt.data.get("target") == "fighter_2":
+			saw_defeated = true
+			break
+	if not saw_defeated:
+		failures.append("poison_defeat: no ACTOR_DEFEATED event for fighter_2")
+	return failures
+
+
+# Poison with damage_per_turn = 0 (or missing param) is a no-op for HP.
+# Tests the params.get() default path.
+func _test_poison_with_zero_damage_is_noop() -> Array[String]:
+	var state: GameState = _make_state()
+	var p2: PlayerState = PlayerState.new()
+	p2.actor_id = "fighter_2"
+	p2.hp = 20
+	p2.max_hp = 20
+	p2.ac = 16
+	p2.max_action_points = 3
+	state.players.append(p2)
+	state.turn_order = ["fighter_1", "fighter_2"]
+	state.active_actor_id = "fighter_1"
+
+	var poison: StatusEffect = StatusEffect.new()
+	poison.effect_id = "poison"
+	poison.duration_remaining = 1
+	# No params set — damage_per_turn defaults to 0
+	state.find_player("fighter_2").status_effects.append(poison)
+
+	var processor: CommandProcessor = CommandProcessor.new()
+	processor.process(EndTurnCommand.new("fighter_1"), state)
+
+	var p2_after: PlayerState = state.find_player("fighter_2")
+	if p2_after.hp != 20:
+		return ["poison_zero: HP should be unchanged (poison with 0 damage), got %d" % p2_after.hp]
+	# No DAMAGE_DEALT event should have fired for poison
+	for evt in state.event_log.events:
+		if evt.event_type == "DAMAGE_DEALT" and evt.data.get("source") == "status_effect:poison":
+			return ["poison_zero: no DAMAGE_DEALT should fire for 0-damage poison, but one did"]
+	return []
+
+
+# --- Phase A: slow ---
+
+# Slow reduces AP each turn AFTER the refresh. With max_action_points=3
+# and ap_reduction=1, the slowed actor should land on AP=2.
+func _test_slow_reduces_ap_after_refresh() -> Array[String]:
+	var state: GameState = _make_state()
+	var p2: PlayerState = PlayerState.new()
+	p2.actor_id = "fighter_2"
+	p2.hp = 20
+	p2.max_hp = 20
+	p2.ac = 16
+	p2.action_points = 0  # outgoing — refresh happens in EndTurn
+	p2.max_action_points = 3
+	state.players.append(p2)
+	state.turn_order = ["fighter_1", "fighter_2"]
+	state.active_actor_id = "fighter_1"
+
+	var slow: StatusEffect = StatusEffect.new()
+	slow.effect_id = "slow"
+	slow.duration_remaining = 2
+	slow.params = {"ap_reduction": 1}
+	state.find_player("fighter_2").status_effects.append(slow)
+
+	var processor: CommandProcessor = CommandProcessor.new()
+	processor.process(EndTurnCommand.new("fighter_1"), state)
+
+	var p2_after: PlayerState = state.find_player("fighter_2")
+	# Refresh sets AP to max (3); slow reduces by 1 → 2
+	if p2_after.action_points != 2:
+		return ["slow_reduce: expected AP 2 (3 - 1), got %d" % p2_after.action_points]
+	return []
+
+
+# Slow with reduction larger than max_action_points should floor at 0,
+# not go negative.
+func _test_slow_floors_ap_at_zero() -> Array[String]:
+	var state: GameState = _make_state()
+	var p2: PlayerState = PlayerState.new()
+	p2.actor_id = "fighter_2"
+	p2.hp = 20
+	p2.max_hp = 20
+	p2.ac = 16
+	p2.max_action_points = 3
+	state.players.append(p2)
+	state.turn_order = ["fighter_1", "fighter_2"]
+	state.active_actor_id = "fighter_1"
+
+	var slow: StatusEffect = StatusEffect.new()
+	slow.effect_id = "slow"
+	slow.duration_remaining = 1
+	slow.params = {"ap_reduction": 99}  # absurdly large
+	state.find_player("fighter_2").status_effects.append(slow)
+
+	var processor: CommandProcessor = CommandProcessor.new()
+	processor.process(EndTurnCommand.new("fighter_1"), state)
+
+	var p2_after: PlayerState = state.find_player("fighter_2")
+	if p2_after.action_points != 0:
+		return ["slow_floor: expected AP 0 (clamped), got %d" % p2_after.action_points]
+	return []
+
+
+# --- Phase A: regenerate ---
+
+# Regenerate heals each turn but is capped at max_hp. A target at 18/20
+# with hp_per_turn=5 lands at 20, not 23.
+func _test_regenerate_heals_capped_at_max_hp() -> Array[String]:
+	var state: GameState = _make_state()
+	var p2: PlayerState = PlayerState.new()
+	p2.actor_id = "fighter_2"
+	p2.hp = 18
+	p2.max_hp = 20
+	p2.ac = 16
+	p2.max_action_points = 3
+	state.players.append(p2)
+	state.turn_order = ["fighter_1", "fighter_2"]
+	state.active_actor_id = "fighter_1"
+
+	var regen: StatusEffect = StatusEffect.new()
+	regen.effect_id = "regenerate"
+	regen.duration_remaining = 1
+	regen.params = {"hp_per_turn": 5}  # would push to 23 if uncapped
+	state.find_player("fighter_2").status_effects.append(regen)
+
+	var processor: CommandProcessor = CommandProcessor.new()
+	processor.process(EndTurnCommand.new("fighter_1"), state)
+
+	var failures: Array[String] = []
+	var p2_after: PlayerState = state.find_player("fighter_2")
+	if p2_after.hp != 20:
+		failures.append("regenerate_cap: expected HP 20 (capped at max), got %d" % p2_after.hp)
+
+	# HEALED event should reflect the ACTUAL heal, not the requested 5.
+	# (18 + 2 = 20; the actual heal was 2)
+	var saw_healed: bool = false
+	for evt in state.event_log.events:
+		if evt.event_type == "HEALED" and evt.data.get("source") == "status_effect:regenerate":
+			if evt.data.get("amount") == 2:
+				saw_healed = true
+				break
+	if not saw_healed:
+		failures.append("regenerate_cap: HEALED event should have amount=2 (the actual heal after capping)")
+	return failures
+
+
+# Regenerate must NOT bring a defeated actor back. If hp <= 0 at tick
+# time, the heal is skipped entirely.
+func _test_regenerate_does_not_revive_dead_actor() -> Array[String]:
+	var state: GameState = _make_state()
+	var p2: PlayerState = PlayerState.new()
+	p2.actor_id = "fighter_2"
+	p2.hp = 0  # defeated
+	p2.max_hp = 20
+	p2.ac = 16
+	p2.max_action_points = 3
+	state.players.append(p2)
+	state.turn_order = ["fighter_1", "fighter_2"]
+	state.active_actor_id = "fighter_1"
+
+	var regen: StatusEffect = StatusEffect.new()
+	regen.effect_id = "regenerate"
+	regen.duration_remaining = 1
+	regen.params = {"hp_per_turn": 5}
+	state.find_player("fighter_2").status_effects.append(regen)
+
+	var processor: CommandProcessor = CommandProcessor.new()
+	processor.process(EndTurnCommand.new("fighter_1"), state)
+
+	var p2_after: PlayerState = state.find_player("fighter_2")
+	if p2_after.hp != 0:
+		return ["regenerate_no_revive: dead actor should stay dead, got HP %d" % p2_after.hp]
+	# No HEALED event should have fired
+	for evt in state.event_log.events:
+		if evt.event_type == "HEALED" and evt.data.get("target") == "fighter_2":
+			return ["regenerate_no_revive: HEALED should not fire for a defeated actor"]
 	return []
