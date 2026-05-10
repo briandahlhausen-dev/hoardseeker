@@ -69,6 +69,11 @@ func run_tests() -> Array[String]:
 	failures.append_array(_test_does_not_apply_effects_on_miss())
 	failures.append_array(_test_does_not_apply_effects_on_defeated_target())
 	failures.append_array(_test_applies_effects_on_heal())
+	# Phase L — save throws
+	failures.append_array(_test_save_success_skips_effect_application())
+	failures.append_array(_test_save_fail_applies_effect())
+	failures.append_array(_test_save_does_not_skip_damage())
+	failures.append_array(_test_no_save_type_means_no_save_roll())
 	return failures
 
 
@@ -865,3 +870,145 @@ func _test_applies_effects_on_heal() -> Array[String]:
 	if not saw_blessing:
 		failures.append("applies_heal: heal target should have blessing effect")
 	return failures
+
+
+# --- Phase L: save throws ---
+
+# Build an in-memory save-throw def: 1d4 damage, applies stun, save_type=CON
+# DC=14. Skel target's CON modifier is +20 → save always succeeds.
+# Verify: damage lands, stun does NOT apply, SAVE_ROLLED event fires
+# with saved=true.
+func _test_save_success_skips_effect_application() -> Array[String]:
+	var setup: Dictionary = _make_state_with_def_in_memory()
+	var gs: GameState = setup["state"]
+	var def: AbilityDef = setup["def"]
+	# Configure as a save-required ability
+	def.attack_modifier = 30  # always hits (already set in helper but make explicit)
+	def.save_type = "CON"
+	def.save_dc = 14
+	def.save_negates_effect = true
+	# Stack the deck: target has +20 CON → save always succeeds (1+20=21 >= 14)
+	gs.find_monster("skel_1").stats = {"CON": 20}
+
+	var cmd: UseAbilityCommand = UseAbilityCommand.new("fighter_1", "test_save", "skel_1")
+	var events: Array[GameEvent] = []
+	var skel: MonsterState = gs.find_monster("skel_1")
+	var hp_before: int = skel.hp
+	cmd._resolve_against_target(gs, def, skel, "skel_1", events)
+
+	var failures: Array[String] = []
+	# Damage should still land (save only gates effect, not damage)
+	if skel.hp >= hp_before:
+		failures.append("save_success: damage should still land on save success, HP unchanged")
+	# Stun should NOT have been applied
+	for e in skel.status_effects:
+		if e.effect_id == "stun":
+			failures.append("save_success: stun should NOT apply on save success (save_negates_effect=true)")
+	# SAVE_ROLLED event should fire with saved=true
+	var saw_save: bool = false
+	for evt in events:
+		if evt.event_type == "SAVE_ROLLED":
+			saw_save = true
+			if evt.data.get("saved") != true:
+				failures.append("save_success: SAVE_ROLLED.saved should be true (CON +20 vs DC 14)")
+			break
+	if not saw_save:
+		failures.append("save_success: SAVE_ROLLED event missing")
+	return failures
+
+
+# Save fail: target's CON modifier is -10 → save always fails. Effect
+# applies. Damage also applies (always does on hit).
+func _test_save_fail_applies_effect() -> Array[String]:
+	var setup: Dictionary = _make_state_with_def_in_memory()
+	var gs: GameState = setup["state"]
+	var def: AbilityDef = setup["def"]
+	def.attack_modifier = 30
+	def.save_type = "CON"
+	def.save_dc = 14
+	def.save_negates_effect = true
+	# Save always fails: -10 + d20 (max 20) = 10, vs DC 14 → fail
+	gs.find_monster("skel_1").stats = {"CON": -10}
+
+	var cmd: UseAbilityCommand = UseAbilityCommand.new("fighter_1", "test_save", "skel_1")
+	var events: Array[GameEvent] = []
+	var skel: MonsterState = gs.find_monster("skel_1")
+	cmd._resolve_against_target(gs, def, skel, "skel_1", events)
+
+	var failures: Array[String] = []
+	# Stun SHOULD have been applied (save failed)
+	var saw_stun: bool = false
+	for e in skel.status_effects:
+		if e.effect_id == "stun":
+			saw_stun = true
+	if not saw_stun:
+		failures.append("save_fail: stun should apply on save fail")
+	# SAVE_ROLLED event should fire with saved=false
+	for evt in events:
+		if evt.event_type == "SAVE_ROLLED":
+			if evt.data.get("saved") != false:
+				failures.append("save_fail: SAVE_ROLLED.saved should be false (CON -10 vs DC 14)")
+			break
+	return failures
+
+
+# Even on save success, the damage payload still lands. Saves only gate
+# effect application — not damage. (D&D 5e "save halves" is a future need.)
+func _test_save_does_not_skip_damage() -> Array[String]:
+	var setup: Dictionary = _make_state_with_def_in_memory()
+	var gs: GameState = setup["state"]
+	var def: AbilityDef = setup["def"]
+	def.attack_modifier = 30
+	def.damage_dice_count = 5  # hefty damage so we can verify it landed
+	def.damage_dice_sides = 8
+	def.save_type = "CON"
+	def.save_dc = 14
+	gs.find_monster("skel_1").stats = {"CON": 20}  # save always succeeds
+
+	var cmd: UseAbilityCommand = UseAbilityCommand.new("fighter_1", "test_save", "skel_1")
+	var events: Array[GameEvent] = []
+	var skel: MonsterState = gs.find_monster("skel_1")
+	var hp_before: int = skel.hp
+	cmd._resolve_against_target(gs, def, skel, "skel_1", events)
+
+	# Verify damage landed despite save success
+	var saw_damage: bool = false
+	for evt in events:
+		if evt.event_type == "DAMAGE_DEALT":
+			saw_damage = true
+			break
+	if not saw_damage:
+		return ["save_no_damage_skip: DAMAGE_DEALT should fire even when save succeeds"]
+	if skel.hp >= hp_before:
+		return ["save_no_damage_skip: HP should have decreased; got %d, was %d" % [skel.hp, hp_before]]
+	return []
+
+
+# Default: save_type empty means no save roll happens at all. Effects
+# apply unconditionally on hit (existing chunk-K behavior).
+func _test_no_save_type_means_no_save_roll() -> Array[String]:
+	var setup: Dictionary = _make_state_with_def_in_memory()
+	var gs: GameState = setup["state"]
+	var def: AbilityDef = setup["def"]
+	def.attack_modifier = 30
+	# def.save_type defaults to "" — no save
+	def.save_dc = 99  # would be unsave-able if save logic ran
+	gs.find_monster("skel_1").stats = {"CON": -50}
+
+	var cmd: UseAbilityCommand = UseAbilityCommand.new("fighter_1", "test_save", "skel_1")
+	var events: Array[GameEvent] = []
+	var skel: MonsterState = gs.find_monster("skel_1")
+	cmd._resolve_against_target(gs, def, skel, "skel_1", events)
+
+	# No SAVE_ROLLED event should fire
+	for evt in events:
+		if evt.event_type == "SAVE_ROLLED":
+			return ["no_save: SAVE_ROLLED should not fire when save_type is empty"]
+	# Stun should still apply (no save check, applies unconditionally)
+	var saw_stun: bool = false
+	for e in skel.status_effects:
+		if e.effect_id == "stun":
+			saw_stun = true
+	if not saw_stun:
+		return ["no_save: stun should apply when no save (existing chunk-K behavior)"]
+	return []

@@ -24,6 +24,7 @@ const FIGHTER_POWER_STRIKE_PATH := "res://src/content/abilities/fighter_power_st
 const FIGHTER_SECOND_WIND_PATH := "res://src/content/abilities/fighter_second_wind.tres"
 const CHAMPION_GREAT_WEAPON_MASTER_PATH := "res://src/content/abilities/champion_great_weapon_master.tres"
 const CHAMPION_CRITICAL_FINISHER_PATH := "res://src/content/abilities/champion_critical_finisher.tres"
+const FIGHTER_SHIELD_BASH_PATH := "res://src/content/abilities/fighter_shield_bash.tres"
 
 
 func run_tests() -> Array[String]:
@@ -45,6 +46,9 @@ func run_tests() -> Array[String]:
 	# Phase H — execute mechanic
 	failures.append_array(_test_execute_fields_default_to_zero())
 	failures.append_array(_test_champion_critical_finisher_canonical_stats())
+	# Phase L — save throw fields + fighter_shield_bash (first ability that uses them)
+	failures.append_array(_test_save_fields_default_to_no_save())
+	failures.append_array(_test_fighter_shield_bash_canonical_stats())
 	return failures
 
 
@@ -321,4 +325,59 @@ func _test_champion_critical_finisher_canonical_stats() -> Array[String]:
 		failures.append("finisher: damage_dice_count should be 1, got %d" % def.damage_dice_count)
 	if def.damage_dice_sides != 8:
 		failures.append("finisher: damage_dice_sides should be 8 (1d8 fallback), got %d" % def.damage_dice_sides)
+	return failures
+
+
+# Save fields default to "no save" — empty save_type means
+# UseAbilityCommand skips the save check entirely. Existing damage and
+# heal abilities inherit this default; their effects (when declared via
+# applies_effects in some future authoring pass) would apply
+# unconditionally on hit.
+func _test_save_fields_default_to_no_save() -> Array[String]:
+	var failures: Array[String] = []
+	var fresh: AbilityDef = AbilityDef.new()
+	if fresh.save_type != "":
+		failures.append("save_default: fresh save_type should be empty, got '%s'" % fresh.save_type)
+	if fresh.save_dc != 0:
+		failures.append("save_default: fresh save_dc should be 0, got %d" % fresh.save_dc)
+	if fresh.save_negates_effect != true:
+		failures.append("save_default: fresh save_negates_effect should default to true")
+
+	# Existing damage abilities (no save) keep working unchanged.
+	for path in [FIGHTER_SLASH_PATH, FIGHTER_CLEAVE_PATH, FIGHTER_POWER_STRIKE_PATH, CHAMPION_GREAT_WEAPON_MASTER_PATH]:
+		var def: AbilityDef = load(path) as AbilityDef
+		if def.save_type != "":
+			failures.append("save_default: %s should have empty save_type, got '%s'" % [path, def.save_type])
+	return failures
+
+
+# fighter_shield_bash per CONTENT.md "Base abilities":
+# "1 AP | 1d4 damage + STUN on save fail (DC 14 CON)."
+# First ability with both applies_effects populated AND a save throw.
+func _test_fighter_shield_bash_canonical_stats() -> Array[String]:
+	var def: AbilityDef = load(FIGHTER_SHIELD_BASH_PATH) as AbilityDef
+	var failures: Array[String] = []
+	if def == null:
+		failures.append("shield_bash: fighter_shield_bash.tres failed to load")
+		return failures
+	if def.id != "fighter_shield_bash":
+		failures.append("shield_bash: id should be 'fighter_shield_bash', got '%s'" % def.id)
+	if def.ap_cost != 1:
+		failures.append("shield_bash: ap_cost should be 1, got %d" % def.ap_cost)
+	if def.damage_dice_count != 1 or def.damage_dice_sides != 4:
+		failures.append("shield_bash: damage should be 1d4, got %dd%d" % [def.damage_dice_count, def.damage_dice_sides])
+	# Save fields
+	if def.save_type != "CON":
+		failures.append("shield_bash: save_type should be 'CON' per CONTENT.md, got '%s'" % def.save_type)
+	if def.save_dc != 14:
+		failures.append("shield_bash: save_dc should be 14 per CONTENT.md, got %d" % def.save_dc)
+	if def.save_negates_effect != true:
+		failures.append("shield_bash: save_negates_effect should be true (success = no stun)")
+	# applies_effects should have the stun
+	if def.applies_effects.size() != 1:
+		failures.append("shield_bash: should have 1 declared effect (stun), got %d" % def.applies_effects.size())
+	elif def.applies_effects[0].effect_id != "stun":
+		failures.append("shield_bash: declared effect should be stun, got '%s'" % def.applies_effects[0].effect_id)
+	elif def.applies_effects[0].duration_remaining != 1:
+		failures.append("shield_bash: stun duration should be 1, got %d" % def.applies_effects[0].duration_remaining)
 	return failures

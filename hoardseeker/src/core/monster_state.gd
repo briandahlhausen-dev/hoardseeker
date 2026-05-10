@@ -32,7 +32,11 @@ class_name MonsterState extends Resource
 @export var max_action_points: int = 3
 
 # === Stats (D&D-style, mirrors PlayerState for parity) ===
-@export var stats: Dictionary = {}          # {"STR": 14, "DEX": 12, ...}
+## Convention: values stored here are SAVE MODIFIERS (signed ints), not
+## raw ability scores. CON 14 in D&D maps to +2 modifier; we store 2.
+## Empty dictionary means "all stats at +0" — the average baseline that
+## still allows save throws to function (lookup defaults to 0).
+@export var stats: Dictionary = {}          # {"STR": 1, "DEX": 0, "CON": 2, ...}
 
 # === Abilities the monster can use this encounter ===
 @export var ability_ids: Array[String] = []
