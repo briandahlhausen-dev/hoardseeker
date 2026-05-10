@@ -35,6 +35,9 @@ const AttackCommand = preload("res://src/systems/combat/attack_command.gd")
 const EndTurnCommand = preload("res://src/systems/combat/end_turn_command.gd")
 const UseAbilityCommand = preload("res://src/systems/combat/use_ability_command.gd")
 const CommandProcessor = preload("res://src/core/command_processor.gd")
+const MonsterDef = preload("res://src/content/monsters/monster_def.gd")
+
+const SKELETON_WARRIOR_PATH := "res://src/content/monsters/skeleton_warrior.tres"
 
 
 func run_tests() -> Array[String]:
@@ -72,14 +75,7 @@ func _make_initial_state(seed_val: int = 42) -> GameState:
 	gs.players.append(fighter)
 
 	gs.current_encounter = EncounterState.new()
-	var skeleton: MonsterState = MonsterState.new()
-	skeleton.actor_id = "skel_1"
-	skeleton.monster_id = "skeleton_warrior"
-	skeleton.hp = 12
-	skeleton.max_hp = 12
-	skeleton.ac = 13
-	skeleton.action_points = 2
-	skeleton.max_action_points = 2
+	var skeleton: MonsterState = (load(SKELETON_WARRIOR_PATH) as MonsterDef).spawn_monster_state("skel_1")
 	gs.current_encounter.monsters.append(skeleton)
 
 	gs.turn_order = ["fighter_1", "skel_1"]
@@ -305,16 +301,9 @@ func _make_full_fight_state(seed_val: int) -> GameState:
 	gs.players.append(fighter)
 
 	gs.current_encounter = EncounterState.new()
+	var skeleton_def: MonsterDef = load(SKELETON_WARRIOR_PATH) as MonsterDef
 	for actor_id in ["skel_1", "skel_2"]:
-		var skel: MonsterState = MonsterState.new()
-		skel.actor_id = actor_id
-		skel.monster_id = "skeleton_warrior"
-		skel.hp = 12
-		skel.max_hp = 12
-		skel.ac = 13
-		skel.action_points = 2
-		skel.max_action_points = 2
-		gs.current_encounter.monsters.append(skel)
+		gs.current_encounter.monsters.append(skeleton_def.spawn_monster_state(actor_id))
 
 	gs.turn_order = ["fighter_1", "skel_1", "skel_2"]
 	gs.active_actor_id = "fighter_1"
