@@ -26,6 +26,9 @@ const StatusEffect = preload("res://src/core/status_effect.gd")
 const ApplyStatusEffectCommand = preload("res://src/systems/combat/apply_status_effect_command.gd")
 const EndTurnCommand = preload("res://src/systems/combat/end_turn_command.gd")
 const CommandProcessor = preload("res://src/core/command_processor.gd")
+const MonsterDef = preload("res://src/content/monsters/monster_def.gd")
+
+const SKELETON_WARRIOR_PATH := "res://src/content/monsters/skeleton_warrior.tres"
 
 
 func run_tests() -> Array[String]:
@@ -65,12 +68,7 @@ func _make_state(seed_val: int = 42) -> GameState:
 	gs.players.append(fighter)
 
 	gs.current_encounter = EncounterState.new()
-	var skel: MonsterState = MonsterState.new()
-	skel.actor_id = "skel_1"
-	skel.monster_id = "skeleton_warrior"
-	skel.hp = 12
-	skel.max_hp = 12
-	skel.ac = 13
+	var skel: MonsterState = (load(SKELETON_WARRIOR_PATH) as MonsterDef).spawn_monster_state("skel_1")
 	gs.current_encounter.monsters.append(skel)
 
 	gs.turn_order = ["fighter_1", "skel_1"]

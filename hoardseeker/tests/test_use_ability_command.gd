@@ -27,6 +27,9 @@ const RNGService = preload("res://src/core/rng_service.gd")
 const GameEvent = preload("res://src/core/game_event.gd")
 const UseAbilityCommand = preload("res://src/systems/combat/use_ability_command.gd")
 const CommandProcessor = preload("res://src/core/command_processor.gd")
+const MonsterDef = preload("res://src/content/monsters/monster_def.gd")
+
+const SKELETON_WARRIOR_PATH := "res://src/content/monsters/skeleton_warrior.tres"
 
 
 func run_tests() -> Array[String]:
@@ -79,12 +82,10 @@ func _make_state(
 	gs.players.append(fighter)
 
 	gs.current_encounter = EncounterState.new()
-	var skeleton: MonsterState = MonsterState.new()
-	skeleton.actor_id = "skel_1"
-	skeleton.monster_id = "skeleton_warrior"
+	var skeleton: MonsterState = (load(SKELETON_WARRIOR_PATH) as MonsterDef).spawn_monster_state("skel_1")
+	# Override HP for tests that exercise low-HP / dead-target validation paths.
 	skeleton.hp = target_hp
 	skeleton.max_hp = max(target_hp, 1)
-	skeleton.ac = 13
 	gs.current_encounter.monsters.append(skeleton)
 
 	return gs
@@ -247,13 +248,12 @@ func _make_multi_state(
 	gs.players.append(fighter)
 
 	gs.current_encounter = EncounterState.new()
+	var skeleton_def: MonsterDef = load(SKELETON_WARRIOR_PATH) as MonsterDef
 	for actor_id in ["skel_1", "skel_2"]:
-		var skel: MonsterState = MonsterState.new()
-		skel.actor_id = actor_id
-		skel.monster_id = "skeleton_warrior"
+		var skel: MonsterState = skeleton_def.spawn_monster_state(actor_id)
+		# Override HP per test parameter (validation tests use low values).
 		skel.hp = skel_hp
 		skel.max_hp = max(skel_hp, 1)
-		skel.ac = 13
 		gs.current_encounter.monsters.append(skel)
 
 	return gs

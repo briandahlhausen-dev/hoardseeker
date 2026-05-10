@@ -31,6 +31,9 @@ const EncounterState = preload("res://src/core/encounter_state.gd")
 const EventLog = preload("res://src/core/event_log.gd")
 const RNGService = preload("res://src/core/rng_service.gd")
 const GameEvent = preload("res://src/core/game_event.gd")
+const MonsterDef = preload("res://src/content/monsters/monster_def.gd")
+
+const SKELETON_WARRIOR_PATH := "res://src/content/monsters/skeleton_warrior.tres"
 const AttackCommand = preload("res://src/systems/combat/attack_command.gd")
 const CommandProcessor = preload("res://src/core/command_processor.gd")
 
@@ -72,15 +75,7 @@ func _make_fight(seed_val: int = 42) -> GameState:
 	gs.current_encounter = EncounterState.new()
 	gs.current_encounter.encounter_id = "test_skirmish"
 
-	var skeleton: MonsterState = MonsterState.new()
-	skeleton.actor_id = "skel_1"
-	skeleton.display_name = "Skeleton Warrior"
-	skeleton.monster_id = "skeleton_warrior"
-	skeleton.hp = 12
-	skeleton.max_hp = 12
-	skeleton.ac = 13
-	skeleton.action_points = 2
-	skeleton.max_action_points = 2
+	var skeleton: MonsterState = (load(SKELETON_WARRIOR_PATH) as MonsterDef).spawn_monster_state("skel_1")
 	gs.current_encounter.monsters.append(skeleton)
 
 	return gs
