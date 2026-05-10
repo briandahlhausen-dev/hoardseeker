@@ -840,6 +840,82 @@ All three answers point to A.
 
 ---
 
+## 2026-05-10 — Ability → effect integration: AbilityDef.applies_effects (full effects inline)
+
+**Status**: Decided. Resolves the 2026-05-10 IDEAS entry sub-question on ability integration.
+
+**Context**: With status effects shipped (chunk 8 + Phase A + Phase I), abilities need a way to declare "apply this effect on hit" so `fighter_shield_bash` etc. become buildable. The IDEAS entry laid out three options:
+- (a) `AbilityDef.applies_effects: Array[StatusEffect]` — full effects carried inline.
+- (b) effect id + per-application params on the def.
+- (c) `on_hit_commands: Array[Command]` — generic side-effect chain.
+
+**Decision**: Option (a). `AbilityDef.applies_effects: Array[StatusEffect] = []`. Each ability's .tres file declares the full StatusEffect instances to apply on success. UseAbilityCommand applies them after damage/heal resolution, using a stacking-aware helper.
+
+**Rationale**:
+- Matches the existing data-driven content pattern. .tres files already author effects as inline data; carrying the full StatusEffect inline is consistent.
+- Per-ability customization is the common case. Cleave's stun (1 turn) ≠ a major boss attack's stun (3 turns) ≠ a cursed weapon's stun (permanent). Storing those differences inline beats a registry + override-params indirection.
+- Multi-effect abilities are natural ("Frostbite": apply both SLOW and a small DOT). Just two entries in `applies_effects`.
+- Options (b) and (c) buy generality we don't need yet. (b) introduces a registry that doesn't exist; (c) is a sub-command system that's heavier than current scope.
+
+**Application timing**:
+- Damage path (`_resolve_attack`): apply effects ON HIT, AFTER damage. Skip if target was defeated by the damage (no apply-stun-to-corpse). Skip on miss (the "miss but apply on save fail" pattern is the chunk-L save-throws concern).
+- Heal path (`_resolve_heal`): apply effects always (heals don't fail).
+- Execute path: applies ON EXECUTE-SUCCESS but not on the fall-through-to-damage path. (Current code: execute path doesn't call `_apply_declared_effects`; only the damage path on a non-defeating hit does. If a future "on execute apply X" pattern is needed, add at the execute branch.)
+
+**Independence**: each effect is `duplicate(true)`'d at apply time so the def's `applies_effects` array isn't aliased onto live actors. Two cleaved skeletons get independent stun instances; mutating one wouldn't affect the other or the def.
+
+**Trade-offs**:
+- Slight authoring overhead — same effect declared per ability. Mitigation: if all "stun" applications need to change, find/replace across .tres files (small N).
+- The .tres format for nested resources is more verbose than flat fields. Acceptable; .tres files are tooling-friendly.
+- Damage path skips effect application on defeat — by design, but flagged here so future-Claude doesn't "fix" it.
+
+**Load-bearing files**:
+- [src/content/abilities/ability_def.gd](hoardseeker/src/content/abilities/ability_def.gd) — `applies_effects: Array[StatusEffect]` field.
+- [src/systems/combat/use_ability_command.gd](hoardseeker/src/systems/combat/use_ability_command.gd) — `_apply_declared_effects` helper; called from heal path and (on hit, non-defeated) damage path.
+- [src/systems/combat/apply_status_effect_command.gd](hoardseeker/src/systems/combat/apply_status_effect_command.gd) — `apply_effect_with_stacking` static helper used by both this command and UseAbilityCommand.
+
+**Revisit if**:
+- "Apply X on miss" pattern needed (e.g., a fumble triggers a side-effect on the caster). Add a separate `applies_on_miss` field or a richer dispatch.
+- Hybrid abilities want different effects on damage vs heal in the same ability. Probably need two arrays (`applies_on_damage` / `applies_on_heal`) or a tagged effect declaring its own trigger.
+- "Apply X on save fail" arrives via Phase L — that integration is the chunk-L design call.
+
+---
+
+## 2026-05-10 — Status effect stacking: refresh duration on same effect_id (D&D 5e default)
+
+**Status**: Decided. Resolves the 2026-05-10 IDEAS entry sub-question on stacking.
+
+**Context**: With ability-applies-effects landing in Phase K, the question of "what if the target already has that effect" needs an answer. IDEAS options:
+- (a) Always stack — second instance is independent.
+- (b) Refresh duration — `duration_remaining = max(existing, incoming)`.
+- (c) Per-effect `stack_mode` field on StatusEffect.
+
+**Decision**: Option (b). Refresh-duration on same effect_id. Existing effect's params are preserved (the second cast doesn't overwrite — D&D 5e refresh semantics).
+
+**Implementation**: `ApplyStatusEffectCommand.apply_effect_with_stacking` (static helper) is the single application path. UseAbilityCommand's `_apply_declared_effects` calls it for each effect. The helper looks for an existing effect with the same effect_id; if found, refreshes duration to max; otherwise appends. STATUS_REFRESHED event fires on refresh, STATUS_APPLIED on append.
+
+Permanent effects (`duration_remaining == -1`) are sticky: if either the existing or incoming is permanent, the result stays permanent.
+
+**Rationale**:
+- Matches D&D 5e convention (most conditions don't stack — they refresh). Players have intuition about this from tabletop.
+- Simplest possible rule. No metadata on effects, no per-effect special cases.
+- Easy to reason about for replay determinism: same starting state + same command sequence = same effect list, no "did the second stun start this turn or stack with the first" ambiguity.
+- Option (c) is the right move when an effect specifically needs different stacking semantics (e.g., poison that stacks intensity), but premature now.
+
+**Trade-offs**:
+- Loses tactical depth — "double-stun" can't ever happen. Acceptable for the slice; revisit when an ability specifically needs stacking.
+- Params on the existing effect are preserved, not the incoming — so applying "stun-with-1-AP-reduction-as-bonus" over "stun-with-no-bonus" doesn't merge the params. Future could use option (c) with an explicit merge mode.
+
+**Load-bearing files**:
+- [src/systems/combat/apply_status_effect_command.gd](hoardseeker/src/systems/combat/apply_status_effect_command.gd) — `apply_effect_with_stacking` static helper. The single source of truth for stacking behavior.
+
+**Revisit if**:
+- An effect needs explicit stack semantics (e.g., poison damage that stacks per stack count). Add option (c) at that point — `StatusEffect.stack_mode` enum or similar.
+- Param merging on refresh becomes valuable (currently params from the first application are kept).
+- A "harder version overwrites" rule is wanted (apply 3-turn stun > existing 2-turn stun → result 3-turn AND maybe with new params).
+
+---
+
 ## Open questions (not yet decided)
 
 These need to be revisited as the slice progresses:
