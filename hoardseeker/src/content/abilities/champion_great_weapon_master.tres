@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AbilityDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/abilities/ability_def.gd" id="1_ability_def"]
+
+[resource]
+script = ExtResource("1_ability_def")
+id = "champion_great_weapon_master"
+name_string_id = "ability_champion_great_weapon_master_name"
+description_string_id = "ability_champion_great_weapon_master_description"
+ap_cost = 2
+target_count = 1
+attack_modifier = -2
+damage_dice_count = 2
+damage_dice_sides = 10
+damage_modifier = 0
+damage_type = "physical"
+heal_dice_count = 0
+heal_dice_sides = 0
+heal_modifier = 0
