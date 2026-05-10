@@ -801,6 +801,45 @@ The dispatch is gated by `def.execute_threshold_pct > 0.0 AND def.execute_chance
 
 ---
 
+## 2026-05-10 — Monster turn flow: monsters share AP-driven turns with players
+
+**Status**: Decided. Resolves the 2026-05-09 IDEAS entry "Monster turn flow."
+
+**Context**: With status effects (stun, slow) shipped and monsters now able to be targeted by abilities, we needed to settle whether monster turns are AP-budgeted (like players) or use a simpler one-decision-per-turn model. The IDEAS entry from 2026-05-09 laid out three decision-driving questions.
+
+**Decision**: Approach A — monsters share the AP-driven turn structure with players. `EndTurnCommand` extends to refresh monster AP via `find_actor` (instead of `find_player`). Monster AI is a separate helper (`MonsterAI.pick_next_action`) that the test driver / future runner invokes in a loop until it returns null, then issues `EndTurnCommand` for the monster.
+
+**Rationale** (per the three decision-driving questions in the IDEAS entry):
+- **How many actions per turn?** Most monsters carry 1-3 AP. Multiple-action turns are common (ghoul has 3 AP). AP makes sense.
+- **Does monster AP need to be visible to players?** Yes — the chunk-8 `stun` effect zeros AP, the chunk-A `slow` effect reduces AP. Both work meaningfully on monsters only if monsters carry AP.
+- **Does monster turn structure resemble player turn structure?** Yes — both go through `EndTurnCommand`, both need status-effect tick at start of turn, both consume AP via commands.
+
+All three answers point to A.
+
+**Implementation shape**:
+- `EndTurnCommand` AP refresh: `find_player` → `find_actor`. Status-effect tick already used `find_actor`.
+- `MonsterAI.pick_next_action(state, monster_id) -> Command | null` — stateless static helper. Returns the next command the monster wants to issue (basic attack against first living player), or null when out of AP / dead / no targets.
+- Monster turn = AI loop driven externally (test driver currently; future AIRunner system that fires when `active_actor_id` transitions to a monster).
+
+**Why a helper, not a `MonsterTakeTurnCommand`**: a single monster turn produces a *sequence* of mutations (attack, attack, end-turn). Bundling all into one command would either smuggle multiple mutations into one apply() (violates the chunk-3 hard rule) or require sub-command composition heavier than current scope. The helper preserves single-command-single-mutation while letting the AI be a normal function.
+
+**Trade-offs**:
+- Monster AI now needs a real decision function (currently: "attack first living player" — minimal). Future improvements: ability scoring, target prioritization, defensive moves. Doable incrementally.
+- Players issuing AP-modifying effects against monsters now matters mechanically (chunk-8 stun, chunk-A slow both work end-to-end against monsters). Good.
+- The "AI loop driven externally" pattern requires a system to invoke it in production. For tests, the loop is explicit. For game runtime, an AIRunner autoload listens for state changes and runs the loop. Not built yet — flagged as follow-up.
+
+**Load-bearing files**:
+- [src/systems/combat/end_turn_command.gd](hoardseeker/src/systems/combat/end_turn_command.gd) — AP refresh extends to monsters via find_actor.
+- [src/systems/combat/monster_ai.gd](hoardseeker/src/systems/combat/monster_ai.gd) — new file. `MonsterAI.pick_next_action`.
+- [tests/test_monster_ai.gd](hoardseeker/tests/test_monster_ai.gd) — full coverage including stunned-monster-AI-loop-terminates-without-action integration.
+
+**Revisit if**:
+- Monsters need radically different turn structure (e.g., a boss with phase-based scripted turns) — extend AI, not the turn-end mechanism.
+- An AIRunner system is built to drive AI loops in production — that's the natural follow-up, not a revisit.
+- Performance becomes a concern with many monsters (each AI call iterates state.players to find a target) — micro-optimize at that point; current N is small.
+
+---
+
 ## Open questions (not yet decided)
 
 These need to be revisited as the slice progresses:
