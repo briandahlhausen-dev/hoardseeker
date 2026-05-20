@@ -1,0 +1,201 @@
+{
+  "lastUpdated": "2026-05-20T14:30:00Z",
+  "metrics": {
+    "total_confirmed": {
+      "value": 8420,
+      "subscript": "+342 (24h)",
+      "sparkline": [4200, 5100, 5800, 6400, 6900, 7600, 7900, 8100, 8420],
+      "thresholdBreached": false
+    },
+    "active_zones": {
+      "value": 17,
+      "subscript": "+2 new",
+      "sparkline": [6, 8, 10, 11, 13, 14, 15, 16, 17],
+      "thresholdBreached": false
+    },
+    "severity_index": {
+      "value": 7.8,
+      "subscript": "↑ 0.3 (48h)",
+      "sparkline": [5.2, 5.8, 6.1, 6.5, 6.8, 7.0, 7.2, 7.5, 7.8],
+      "thresholdBreached": true
+    },
+    "response_coverage": {
+      "value": 54,
+      "subscript": "% of zones covered",
+      "sparkline": [82, 78, 75, 70, 68, 62, 59, 56, 54],
+      "thresholdBreached": true
+    }
+  },
+  "locations": [
+    {
+      "id": "loc_001",
+      "name": "Cairo Metro Region",
+      "lat": 30.0444,
+      "lng": 31.2357,
+      "status": "active",
+      "caseCount": 1840,
+      "details": {
+        "firstReported": "2026-01-20",
+        "lastUpdate": "2026-05-19",
+        "population": "21.3M",
+        "healthCapacity": "Strained",
+        "notes": "Primary hotspot. Secondary spread into Delta region confirmed."
+      }
+    },
+    {
+      "id": "loc_002",
+      "name": "Khartoum",
+      "lat": 15.5007,
+      "lng": 32.5599,
+      "status": "active",
+      "caseCount": 1120,
+      "details": {
+        "firstReported": "2026-01-31",
+        "lastUpdate": "2026-05-18",
+        "population": "6.2M",
+        "healthCapacity": "Overwhelmed",
+        "notes": "Rapid escalation. Infrastructure constraints limiting response."
+      }
+    },
+    {
+      "id": "loc_003",
+      "name": "Addis Ababa",
+      "lat": 9.0228,
+      "lng": 38.7469,
+      "status": "cluster",
+      "caseCount": 620,
+      "details": {
+        "firstReported": "2026-02-14",
+        "lastUpdate": "2026-05-17",
+        "population": "5.5M",
+        "healthCapacity": "Stressed",
+        "notes": "Cluster pattern detected. Contact tracing active."
+      }
+    },
+    {
+      "id": "loc_004",
+      "name": "Nairobi",
+      "lat": -1.2921,
+      "lng": 36.8219,
+      "status": "cluster",
+      "caseCount": 410,
+      "details": {
+        "firstReported": "2026-02-20",
+        "lastUpdate": "2026-05-16",
+        "population": "5.1M",
+        "healthCapacity": "Adequate",
+        "notes": "Isolated cluster at transit hub. Containment measures in place."
+      }
+    },
+    {
+      "id": "loc_005",
+      "name": "Tripoli",
+      "lat": 32.9001,
+      "lng": 13.1809,
+      "status": "imported",
+      "caseCount": 95,
+      "details": {
+        "firstReported": "2026-03-05",
+        "lastUpdate": "2026-05-15",
+        "population": "1.2M",
+        "healthCapacity": "Adequate",
+        "notes": "Imported cases. No sustained local transmission confirmed."
+      }
+    },
+    {
+      "id": "loc_006",
+      "name": "Aden",
+      "lat": 12.7794,
+      "lng": 45.0367,
+      "status": "monitoring",
+      "caseCount": 28,
+      "details": {
+        "firstReported": "2026-03-18",
+        "lastUpdate": "2026-05-14",
+        "population": "0.9M",
+        "healthCapacity": "Limited",
+        "notes": "Under enhanced surveillance. Travel link to primary zone confirmed."
+      }
+    },
+    {
+      "id": "loc_007",
+      "name": "Riyadh Periphery",
+      "lat": 24.2,
+      "lng": 45.8,
+      "status": "monitoring",
+      "caseCount": 12,
+      "details": {
+        "firstReported": "2026-04-02",
+        "lastUpdate": "2026-05-12",
+        "population": "—",
+        "healthCapacity": "High",
+        "notes": "Precautionary monitoring. All cases linked to returning travelers."
+      }
+    },
+    {
+      "id": "loc_008",
+      "name": "Lagos",
+      "lat": 6.5244,
+      "lng": 3.3792,
+      "status": "monitoring",
+      "caseCount": 8,
+      "details": {
+        "firstReported": "2026-04-10",
+        "lastUpdate": "2026-05-10",
+        "population": "15.9M",
+        "healthCapacity": "Adequate",
+        "notes": "Monitoring travel corridor. No local chains detected."
+      }
+    }
+  ],
+  "secondaryMarkers": {
+    "borders": [
+      { "id": "brd_001", "name": "Aswan Crossing", "lat": 22.9, "lng": 32.9, "status": "restricted" },
+      { "id": "brd_002", "name": "Gallabat Corridor", "lat": 12.97, "lng": 36.18, "status": "closed" },
+      { "id": "brd_003", "name": "Nimule Border", "lat": 3.6, "lng": 32.05, "status": "monitored" }
+    ],
+    "sites": [
+      { "id": "site_001", "name": "WHO Field Office — Cairo", "lat": 29.97, "lng": 31.24 },
+      { "id": "site_002", "name": "MSF Emergency Unit — Khartoum", "lat": 15.56, "lng": 32.54 },
+      { "id": "site_003", "name": "Regional Coordination Hub — Nairobi", "lat": -1.35, "lng": 36.88 }
+    ]
+  },
+  "indicators": {
+    "spread_rate": {
+      "value": "R = 1.31",
+      "severity": "critical",
+      "trend": "up",
+      "note": "Exceeds containment threshold"
+    },
+    "geographic_spread": {
+      "value": "17 zones / 8 states",
+      "severity": "elevated",
+      "trend": "up",
+      "note": "2 new zones added 48h"
+    },
+    "resource_strain": {
+      "value": "HIGH",
+      "severity": "critical",
+      "trend": "flat",
+      "note": "2 sites overwhelmed"
+    },
+    "containment_status": {
+      "value": "PARTIAL",
+      "severity": "elevated",
+      "trend": "down",
+      "note": "54% zone coverage"
+    },
+    "intl_response": {
+      "value": "ACTIVE",
+      "severity": "stable",
+      "trend": "flat",
+      "note": "WHO + 4 bilateral teams"
+    },
+    "trend_7d": {
+      "value": "+18.4%",
+      "severity": "critical",
+      "trend": "up",
+      "note": "Acceleration from prior week"
+    }
+  }
+}
