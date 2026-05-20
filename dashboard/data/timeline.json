@@ -1,0 +1,114 @@
+[
+  {
+    "id": "evt_001",
+    "date": "2026-01-15",
+    "title": "Initial Detection",
+    "description": "Unusual cluster of febrile illness reported in Cairo. Early samples submitted to national reference lab.",
+    "severity": "info",
+    "category": "detection"
+  },
+  {
+    "id": "evt_002",
+    "date": "2026-01-20",
+    "title": "Lab Confirmation",
+    "description": "National reference laboratory confirms novel pathogen. WHO notified under IHR (2005).",
+    "severity": "warn",
+    "category": "official"
+  },
+  {
+    "id": "evt_003",
+    "date": "2026-01-28",
+    "title": "WHO PHEIC Declared",
+    "description": "World Health Organization convenes Emergency Committee. Public Health Emergency of International Concern declared.",
+    "severity": "crit",
+    "category": "official"
+  },
+  {
+    "id": "evt_004",
+    "date": "2026-01-31",
+    "title": "Regional Spread Confirmed",
+    "description": "Cases confirmed in Khartoum following travel from Egypt. Cross-border transmission chain established.",
+    "severity": "crit",
+    "category": "spread"
+  },
+  {
+    "id": "evt_005",
+    "date": "2026-02-08",
+    "title": "International Response Activated",
+    "description": "WHO Emergency Operations Centre activated. Three bilateral response teams mobilised.",
+    "severity": "info",
+    "category": "response"
+  },
+  {
+    "id": "evt_006",
+    "date": "2026-02-14",
+    "title": "3rd Country Affected",
+    "description": "Cluster detected in Addis Ababa. Contact tracing links to returning travellers from Egypt.",
+    "severity": "warn",
+    "category": "spread"
+  },
+  {
+    "id": "evt_007",
+    "date": "2026-02-20",
+    "title": "Nairobi Cluster",
+    "description": "Cases at Nairobi transit hub. Airport screening protocols elevated to enhanced level.",
+    "severity": "warn",
+    "category": "spread"
+  },
+  {
+    "id": "evt_008",
+    "date": "2026-03-01",
+    "title": "1,000 Confirmed Cases",
+    "description": "Global cumulative confirmed cases surpass 1,000. Egypt accounts for 68% of total.",
+    "severity": "warn",
+    "category": "milestone"
+  },
+  {
+    "id": "evt_009",
+    "date": "2026-03-18",
+    "title": "Supply Chain Disruption",
+    "description": "Logistical constraints delay medical supply shipments to Khartoum field sites.",
+    "severity": "warn",
+    "category": "response"
+  },
+  {
+    "id": "evt_010",
+    "date": "2026-04-05",
+    "title": "5,000 Confirmed Cases",
+    "description": "Cumulative cases reach 5,000. Weekly incidence rate accelerating; R estimated at 1.18.",
+    "severity": "crit",
+    "category": "milestone"
+  },
+  {
+    "id": "evt_011",
+    "date": "2026-04-22",
+    "title": "Vaccine Candidate Fast-Track",
+    "description": "WHO grants fast-track designation to lead vaccine candidate. Phase II trials begin in Cairo.",
+    "severity": "ok",
+    "category": "response"
+  },
+  {
+    "id": "evt_012",
+    "date": "2026-05-10",
+    "title": "Khartoum System Overload",
+    "description": "Khartoum health system capacity declared overwhelmed. Emergency field hospitals deployed.",
+    "severity": "crit",
+    "category": "crisis"
+  },
+  {
+    "id": "evt_013",
+    "date": "2026-05-15",
+    "title": "R Exceeds 1.3",
+    "description": "Latest epidemiological modelling places reproduction number at 1.31, above containment threshold.",
+    "severity": "crit",
+    "category": "detection"
+  },
+  {
+    "id": "evt_014",
+    "date": "2026-05-20",
+    "title": "Current Status",
+    "description": "8,420 confirmed cases across 17 active zones in 8 countries. Situation remains highly dynamic.",
+    "severity": "crit",
+    "category": "milestone"
+  }
+]

@@ -1,0 +1,66 @@
+{
+  "title": "GLOBAL SITUATION MONITOR",
+  "subtitle": "Event Tracking & Intelligence Dashboard",
+  "status": {
+    "label": "ELEVATED ALERT",
+    "severity": "warn"
+  },
+  "startDate": "2026-01-15",
+  "mapBounds": [[-30, -15], [75, 65]],
+  "mapCenter": [22, 25],
+  "mapZoom": 3,
+  "metrics": [
+    {
+      "id": "total_confirmed",
+      "label": "CONFIRMED",
+      "threshold": 10000,
+      "thresholdDirection": "above"
+    },
+    {
+      "id": "active_zones",
+      "label": "ACTIVE ZONES",
+      "threshold": 20,
+      "thresholdDirection": "above"
+    },
+    {
+      "id": "severity_index",
+      "label": "SEVERITY INDEX",
+      "threshold": 7.5,
+      "thresholdDirection": "above"
+    },
+    {
+      "id": "response_coverage",
+      "label": "RESPONSE COV.",
+      "threshold": 60,
+      "thresholdDirection": "below"
+    }
+  ],
+  "indicators": [
+    { "id": "spread_rate", "label": "Spread Rate (R)" },
+    { "id": "geographic_spread", "label": "Geographic Spread" },
+    { "id": "resource_strain", "label": "Resource Strain" },
+    { "id": "containment_status", "label": "Containment" },
+    { "id": "intl_response", "label": "Intl. Response" },
+    { "id": "trend_7d", "label": "7-Day Trend" }
+  ],
+  "markerSizeField": "caseCount",
+  "markerSizeRange": [6, 48],
+  "secondaryLayers": {
+    "borders": {
+      "label": "Border Crossings",
+      "icon": "chevron"
+    },
+    "sites": {
+      "label": "Response Sites",
+      "icon": "circle"
+    }
+  },
+  "newsSources": [
+    { "name": "WHO", "url": "https://www.who.int/news", "type": "official" },
+    { "name": "Reuters Health", "url": "https://www.reuters.com/business/healthcare-pharmaceuticals/", "type": "wire" },
+    { "name": "CDC", "url": "https://www.cdc.gov/media/releases/index.html", "type": "official" },
+    { "name": "ECDC", "url": "https://www.ecdc.europa.eu/en/news-events", "type": "official" },
+    { "name": "AP News", "url": "https://apnews.com/hub/world-news", "type": "wire" },
+    { "name": "ProMED", "url": "https://promedmail.org/", "type": "specialty" }
+  ]
+}

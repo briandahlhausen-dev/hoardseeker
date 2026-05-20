@@ -1,0 +1,142 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: #0a0d12;
+    --fg: #d4d4d4;
+    --headline: #ffffff;
+    --crit: #ff2e4c;
+    --warn: #ffb020;
+    --ok: #2dd4a4;
+    --info: #4fc3ff;
+    --border: #1f2937;
+    --border-hover: #2d3748;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--fg);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* Scanlines overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(255, 255, 255, 0.04) 3px,
+      rgba(255, 255, 255, 0.04) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* Monospace number utility */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--bg);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-hover);
+    border-radius: 2px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #4a5568;
+  }
+}
+
+@layer utilities {
+  .font-mono-ui {
+    font-family: 'Space Mono', 'JetBrains Mono', monospace;
+  }
+  .font-mono-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+  }
+  .font-body {
+    font-family: 'IBM Plex Sans', sans-serif;
+  }
+
+  /* Border utility */
+  .border-ops {
+    border: 1px solid var(--border);
+  }
+
+  /* Severity backgrounds */
+  .bg-crit-dim {
+    background-color: rgba(255, 46, 76, 0.1);
+  }
+  .bg-warn-dim {
+    background-color: rgba(255, 176, 32, 0.1);
+  }
+  .bg-ok-dim {
+    background-color: rgba(45, 212, 164, 0.1);
+  }
+  .bg-info-dim {
+    background-color: rgba(79, 195, 255, 0.1);
+  }
+
+  /* Severity text */
+  .text-crit { color: var(--crit); }
+  .text-warn { color: var(--warn); }
+  .text-ok { color: var(--ok); }
+  .text-info { color: var(--info); }
+}
+
+/* Live pulse animation */
+@keyframes pulse-halo {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(3); opacity: 0; }
+}
+
+/* Number roll animation */
+@keyframes digit-roll-in {
+  0% { transform: translateY(-100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes digit-flash {
+  0% { color: #4fc3ff; }
+  100% { color: inherit; }
+}
+
+/* Ticker marquee */
+@keyframes ticker-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* Map drawer slide-in */
+@keyframes drawer-slide-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
