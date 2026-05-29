@@ -66,3 +66,13 @@
   - Once unblocked: skeleton AI (monster turn-end mechanism), then `fighter_shield_bash` as the first ability that applies an effect on hit.
   - More content authoring as desired (more abilities via `.tres`, more monster defs).
   - Phase 2 prep starts when architecture extensions slow down — combat scene UI, dice-roll animation, the centerpiece dice-feel polish per `ROADMAP.md` Phase 2.
+
+---
+
+## 2026-05-29 (Fri) — Week 4 (no game commits; three audit PRs open)
+
+- **What shipped**: Nothing on the Hoardseeker game. Zero game commits since 2026-05-10 (19 days). An unrelated event-monitoring dashboard (Next.js/TypeScript) was committed to this repo on 2026-05-20 — not a game deliverable.
+- **What got hard**: _(user fills in)_
+- **What surprised me**: _(user fills in)_
+- **How I felt**: _(user fills in)_
+- **What's next week**: Review and merge PRs #21, #23, and this one. Update "Currently in flight" in CLAUDE.md (10-min task). Decide what to do with the `dashboard/` folder. Have the `use_ability_command.gd` split conversation before Phase 2 lands another mechanic on top. Then Phase 2 (combat UI + dice feel) whenever you're ready.
