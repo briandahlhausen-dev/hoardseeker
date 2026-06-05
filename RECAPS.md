@@ -66,3 +66,13 @@
   - Once unblocked: skeleton AI (monster turn-end mechanism), then `fighter_shield_bash` as the first ability that applies an effect on hit.
   - More content authoring as desired (more abilities via `.tres`, more monster defs).
   - Phase 2 prep starts when architecture extensions slow down — combat scene UI, dice-roll animation, the centerpiece dice-feel polish per `ROADMAP.md` Phase 2.
+
+---
+
+## 2026-06-05 (Fri) — Week 5 audit (26-day activity gap)
+
+- **What shipped**: No game-development work since May 10 (26 days). Three prior Friday audit PRs (#21 May-15, #23 May-22, #25 May-29) are open and unreviewed. CI remains green — all 12 test files still passing, last confirmed May 29. Note: additional content and architecture work (Phases A–L, resolving both IDEAS.md design questions) shipped on May 10 but wasn't captured in the May-10 recap above; those phases covered monster AI, AP-driven turns, `applies_effects` + stacking, save throws, `fighter_shield_bash`, damage types, heal path, bleed/DOT, and the execute mechanic.
+- **What got hard**: n/a — no sessions to document.
+- **What surprised me**: An unrelated Next.js event monitoring dashboard was committed directly to `main` on May 19 (PR #22, 11:31pm). It has no connection to Hoardseeker and is now sitting under `dashboard/` on main. Also: all three prior Friday audit PRs went unreviewed — the audit cadence has been running faithfully with no one on the other end. A CRITICAL issue (#26) has been filed.
+- **How I felt**: _(user fills in)_
+- **What's next week**: Resume Phase 2 (combat scene UI + dice-roll animation per ROADMAP.md). Review and merge or close PRs #21, #23, #25. Decide what to do with the `dashboard/` commit on main (revert it, or move to a separate repo). Address file-size violations: `use_ability_command.gd` at 352 lines and `end_turn_command.gd` at 194 lines both exceed the 150-line limit. Update `CLAUDE.md` "Currently in flight" — it's 26 days stale.
