@@ -66,3 +66,13 @@
   - Once unblocked: skeleton AI (monster turn-end mechanism), then `fighter_shield_bash` as the first ability that applies an effect on hit.
   - More content authoring as desired (more abilities via `.tres`, more monster defs).
   - Phase 2 prep starts when architecture extensions slow down — combat scene UI, dice-roll animation, the centerpiece dice-feel polish per `ROADMAP.md` Phase 2.
+
+---
+
+## 2026-06-12 (Fri) — Week 6 audit (33-day activity gap, 5 unreviewed audit PRs)
+
+- **What shipped**: No game-development work since May 10 (33 days). Five Friday audit PRs have been opened and gone unreviewed (#21 May-15, #23 May-22, #25 May-29, #27 Jun-05, and this one). CI remains green — all 12 test files still passing, last confirmed June 5. Note: the May-10 week included a large batch of unrecapped work (Phases A–L: monster AI, AP-driven turns, applies_effects, stacking refresh, save throws, fighter_shield_bash, damage types, heal path, bleed/DOT, execute mechanic) that belongs in the May-10 recap above once those PRs are merged.
+- **What got hard**: _(no sessions to document)_
+- **What surprised me**: _(no sessions to document)_
+- **How I felt**: _(user fills in)_
+- **What's next week**: Review and merge PRs #21, #23, #25, #27, and this one (fill in "How I felt" on each before merging). Close issues #24 and #26 once read. Update "Currently in flight" in CLAUDE.md (10 min). Have the use_ability_command.gd split conversation before Phase 2 adds another mechanic on top. Decide what to do with dashboard/ on main (revert, move to own repo, or accept). Then Phase 2 (combat scene UI + dice-roll animation) whenever ready.
