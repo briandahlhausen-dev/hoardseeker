@@ -66,3 +66,15 @@
   - Once unblocked: skeleton AI (monster turn-end mechanism), then `fighter_shield_bash` as the first ability that applies an effect on hit.
   - More content authoring as desired (more abilities via `.tres`, more monster defs).
   - Phase 2 prep starts when architecture extensions slow down — combat scene UI, dice-roll animation, the centerpiece dice-feel polish per `ROADMAP.md` Phase 2.
+
+---
+
+## 2026-06-26 (Fri) — Week 8 (automated audit; no game work this week)
+
+_Note: Weeks 2–7 recap entries exist on open audit PRs #21, #23, #25, #27, #28, #29 — not yet merged. This entry covers the current audit week only._
+
+- **What shipped**: Nothing. No game commits since Phase L on 2026-05-10 (47 days). The only non-audit commit to `main` since then was an unrelated Next.js event-monitoring dashboard (PR #22, 2026-05-19) that has no connection to Hoardseeker. Seven consecutive Friday audit PRs have been opened; none have been reviewed.
+- **What got hard**: N/A — no active work.
+- **What surprised me**: N/A — no active work. CI is healthy (green on every scheduled run). Architecture is solid. Nothing is broken.
+- **How I felt**: _(user fills in)_
+- **What's next week**: The game is in good shape — Phase 1 + extensions (A–L) are complete, all IDEAS questions resolved, tests green. The only thing missing is you. Six audit PRs are waiting. Merging or closing them, then opening a session to answer "what do we build next?" is all it takes to resume. The next clear step is Phase 2: combat scene UI + dice-roll animation.
