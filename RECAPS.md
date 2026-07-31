@@ -66,3 +66,13 @@
   - Once unblocked: skeleton AI (monster turn-end mechanism), then `fighter_shield_bash` as the first ability that applies an effect on hit.
   - More content authoring as desired (more abilities via `.tres`, more monster defs).
   - Phase 2 prep starts when architecture extensions slow down — combat scene UI, dice-roll animation, the centerpiece dice-feel polish per `ROADMAP.md` Phase 2.
+
+---
+
+## 2026-07-31 (Fri) — Week 12 audit (automated Friday audit — 10-week gap)
+
+- **What shipped**: Nothing this week. No game-development commits since 2026-05-10 (73 days). The last commit to `main` (2026-05-19, `0278177`) was an unrelated event-monitoring dashboard — not a Hoardseeker change. Phases A-L shipped on 2026-05-10 but were never recapped: poison/slow/regenerate effects (Phase A), skeleton_archer/zombie/ghoul monster defs (Phase B), fighter_second_wind heal path (Phase C), typed damage + per-actor resistances (Phase F), champion_great_weapon_master (Phase G), champion_critical_finisher + execute mechanic (Phase H), bleed/DOT resistance (Phase I), monster AI + AP-driven turns (Phase J), AbilityDef.applies_effects + stacking-refresh (Phase K), save throws + fighter_shield_bash (Phase L).
+- **What got hard**: Unknown — this entry was written by the automated Friday audit, not the user. The 10-week gap speaks for itself.
+- **What surprised me**: _(automated audit — no user input)_
+- **How I felt**: _(user fills in)_
+- **What's next week**: When ready to resume: run the session-start ritual (SESSION_PROTOCOL.md), update CLAUDE.md "Currently in flight" (stale by 73 days and 20+ commits), and pick one small task to reestablish the streak. The architecture is solid, CI is green — the project is waiting.
