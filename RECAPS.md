@@ -66,3 +66,13 @@
   - Once unblocked: skeleton AI (monster turn-end mechanism), then `fighter_shield_bash` as the first ability that applies an effect on hit.
   - More content authoring as desired (more abilities via `.tres`, more monster defs).
   - Phase 2 prep starts when architecture extensions slow down — combat scene UI, dice-roll animation, the centerpiece dice-feel polish per `ROADMAP.md` Phase 2.
+
+---
+
+## 2026-08-07 (Fri) — Week 13 audit (automated; 89-day pause, no game commits)
+
+- **What shipped**: Automated Friday audit only. No game development this week (or the prior 12 weeks). Last game commit: Phase L, 2026-05-10. 12 Friday audit PRs open and unreviewed since 2026-05-15. Architecture from Phases A–L is solid: 7 abilities, 4 monster defs, 5 status effects, monster AI, damage types, execute mechanic, full replay — all CI-green.
+- **What got hard**: _(user fills in)_
+- **What surprised me**: _(user fills in)_
+- **How I felt**: _(user fills in)_
+- **What's next week**: Phase 2 (combat scene UI + dice-roll animation) is ready to start whenever you are. Shortest re-entry: open a session and say "let's start Phase 2." Housekeeping first: close/merge the open audit PRs, decide what to do with `dashboard/` in this repo, and have the `use_ability_command.gd` split conversation (352 lines, needs splitting before Phase 2 adds more mechanics).

@@ -134,74 +134,56 @@ The user is non-technical and may not know what tools or services exist. When yo
 
 > Updated at end of every session. Empty if nothing in flight. Read first thing on session start.
 
-**Last updated**: 2026-05-10 (Sun) — Phase 1 architecture complete (week 1 close)
+**Last updated**: 2026-08-07 (Fri) — automated Friday audit (development paused since 2026-05-10)
 
 ### Where we are
-**Phase 1 architecture is done.** All foundational simulation primitives are in place and tested. The last 9 chunks (across Sat 2026-05-09 + Sun 2026-05-10) shipped every Phase-1 architectural piece per ROADMAP.md plus three follow-on additions (status effects, fixture migration, full-fight integration replay test).
+**Development is paused.** The last game commit was Phase L (2026-05-10). The last commit to `main` at all was an unrelated Next.js event-monitoring dashboard committed directly to this repo on 2026-05-19 (see "Open items" below). 89 days of inactivity as of this update.
 
-`main` is at `ace69d6` (post chunk-9 merge). Working tree clean. CI green on every push since 2026-05-08.
+`main` is at `0278177`. CI has been green on every run since 2026-05-08. Nothing is broken.
 
-### Test surface
-**12 test files green** on `main`:
-- `test_rng_determinism` (12 assertions, includes duplicate-safety regression tests)
-- `test_game_state_serialization` (7)
-- `test_attack_command` (11) — uses `find_actor` since chunk 2
-- `test_command_processor` (7)
-- `test_end_turn_command` (9)
-- `test_monster_state` (10)
-- `test_scripted_fight` (6 sub-tests, includes 50-seed determinism gate)
-- `test_ability_def` (7) — covers fighter_slash, fighter_cleave, fighter_power_strike
-- `test_use_ability_command` (18, includes multi-target coverage)
-- `test_replay` (6 sub-tests, includes 30-seed sweep + full-fight integration)
-- `test_monster_def` (6) — covers skeleton_warrior + spawn_monster_state contract
-- `test_status_effect` (13) — covers stun + tick mechanics
+### What shipped before the pause (Phases A–L, 2026-05-10)
+All Phase 1 design questions were resolved and implemented the same day they were raised:
+- **7 abilities**: `fighter_slash`, `fighter_cleave`, `fighter_power_strike`, `fighter_second_wind`, `fighter_shield_bash` (save throws), `champion_great_weapon_master`, `champion_critical_finisher`
+- **4 monster defs**: `skeleton_warrior`, `skeleton_archer`, `zombie`, `ghoul`
+- **5 status effects**: stun, poison, slow, regenerate, bleed
+- **Systems**: monster AI (AP-driven turns via `EndTurnCommand`), typed damage + per-actor resistance dictionaries, execute mechanic (champion finisher), save throw resolution on `AbilityDef`, `applies_effects` + stacking-refresh on same `effect_id`
+- **Replay**: full-fight integration replay test round-trips all four concrete commands across a 30-seed sweep
 
-### What architecture exists
-- **Resources**: `GameState`, `PlayerState`, `MonsterState` (siblings, no CombatantState base — see DECISIONS), `AbilityDef`, `MonsterDef`, `StatusEffect`, `EventLog`, `RNGService` (duplicate-safe via persisted `rng_state`)
-- **Commands**: `AttackCommand`, `EndTurnCommand` (incl. status-effect tick), `UseAbilityCommand` (single + multi-target via `target_ids`), `ApplyStatusEffectCommand`. Processed via `CommandProcessor`; logged in `EventLog`.
-- **Content**: `fighter_slash.tres`, `fighter_cleave.tres`, `fighter_power_strike.tres`, `skeleton_warrior.tres`. All tests use the canonical defs via `MonsterDef.spawn_monster_state()` since chunk 9.
-- **Replay**: `EventLog.replay()` round-trips against fresh initial state. Full-fight test composes all four concrete Commands.
+### Test surface (all green on `main`)
+13 test files: `test_rng_determinism`, `test_game_state_serialization`, `test_attack_command`, `test_command_processor`, `test_end_turn_command`, `test_monster_state`, `test_scripted_fight`, `test_ability_def`, `test_use_ability_command`, `test_replay`, `test_monster_def`, `test_status_effect`, `test_monster_ai`
 
-### What's blocked (and what unblocks it)
-Two design questions in [IDEAS.md](IDEAS.md) gate the remaining real architectural work:
+### Open items (housekeeping before next session)
+1. **12 open Friday audit PRs** (#21, #23, #25, #27, #28, #29, #30, #31, #32, #33, #34, #36) — none merged. Batch-close #21–#35 as outdated, then merge #36 or the most current one as the catch-up record.
+2. **`dashboard/` in this repo** — an unrelated Next.js event-monitoring app landed on `main` via PR #22 (2026-05-19). Decide: remove it, or move to its own repo. Either is fine; the current silent presence is the awkward middle ground.
+3. **`use_ability_command.gd` at 352 lines** — over the 150-line modularity rule. Grown across Phases C/F/H/K/L. Natural split: pull damage resolution + effect application into a `UseAbilityResolver` helper. Have this conversation before Phase 2 adds more mechanics on top.
+4. **RECAPS.md on `main`** only has the May 08 and May 10 entries. Audit PR branches hold 12+ additional weekly entries waiting to be merged.
 
-1. **Monster turn flow** (2026-05-09 entry): when monster AI lands, do monster turns share the AP-refresh path (extending `EndTurnCommand` via `find_actor`), or use a separate mechanism? Three decision-driving questions in the entry.
-2. **Status-effect / ability integration + stacking + save throws** (2026-05-10 entry): how does `AbilityDef` declare effects on hit? What happens when an effect is applied twice? Where does save-throw resolution live? All three unblock `fighter_shield_bash` (the next ability per CONTENT.md), so they likely land as a single follow-up design pass.
+### What's blocked
+Nothing architectural. Both IDEAS.md design questions are fully resolved (marked ✅). CI is green. Architecture is solid.
 
 ### What needs to happen first when we resume
 
-1. **Re-read [IDEAS.md](IDEAS.md)** — both entries spell out the questions concretely with decision-driving questions for each.
-2. **Engage the user on those questions** — don't pick the answers unilaterally; the user is the director per VIBE_CODING.md.
-3. **Once unblocked**: skeleton AI (monster turn-end mechanism), then `fighter_shield_bash` as the first effect-applying ability.
-
-If the user wants to keep moving without unblocking design, autonomous-friendly options:
-- More monster defs (`skeleton_archer.tres`, `zombie.tres`) — pure-data adds, low value
-- More ability defs that fit existing patterns — likewise
-
-### Any blockers
-- None on the project itself. Architecture is solid, CI is green.
-- Two design calls in IDEAS.md gate the next architectural chunks; not "blockers" in the sense of broken state, but real ceilings on what the next chunk can be.
+1. **Monday housekeeping** (~30 min): close/merge the open audit PRs, decide on `dashboard/`, have the `use_ability_command.gd` split conversation.
+2. **Start Phase 2**: combat scene UI + dice-roll animation — the centerpiece dice-feel experience per ROADMAP.md. This is the first work that needs a player in the loop to validate. Open a session and say "let's start Phase 2."
 
 ### Open admin items (tracked, not blocking)
 - LLC formation pending (Month 1-2 per `VIBE_CODING.md`)
 - Wacom tablet purchase pending (when art cleanup begins, ~Month 4-6)
 - `Hoardseeker - Copy` folder on user's old Desktop — legacy, user to decide
 - Pricing decision (~$14.99 vs $19.99) deferred to ~Month 14 per `DECISIONS.md`
-- `RECAPS.md` 2026-05-08 entry still has "How I felt" blank; 2026-05-10 entry (this session-end commit) also has the line blank
-- Dispatch / mobile push setup is partial (per TECH_DEBT.md). User has Stop-hook desktop sound working (Ring01.wav). Phone push still needs Dispatch via Claude Desktop → Cowork → Dispatch.
-- Friday audit routine (`trig_014n5heywcVN3czDASX9bhgL`) — first run **2026-05-15 around 4pm ET**; will open a PR titled `Friday audit YYYY-MM-DD` against main.
+- Dispatch / mobile push setup is partial. Desktop sound (Ring01.wav) works. Phone push needs Dispatch via Claude Desktop → Cowork → Dispatch.
 
 ### Working memory worth carrying over (not in code or commits)
 - **`gh pr merge --delete-branch` fails from a worktree**. Workaround: `--delete-branch=false` + `git fetch --prune`. See TECH_DEBT.md.
 - **Tests use `preload()` rather than `class_name`**. preload makes tests robust on fresh checkouts before the first `--import` pass.
 - **Run tests locally via `bash hoardseeker/tests/run.sh`** — wraps the `--import` step.
-- **The user is non-technical and only interacts via Claude.** They don't open VS Code manually, they don't run terminal commands themselves. See `user_workflow_claude_only.md` memory.
-- **The user wants Claude-time estimates, not human-dev hours.** See `feedback_estimates_use_claude_time.md` memory.
-- **Send `PushNotification` at end of every response that hands control back.** See `user_notification_sound.md` memory.
-- **EventLog.replay does NOT re-append commands/events to the replayed state's log** — the log is the input, not the output. Asserting log-size equality post-replay is a false-positive test pattern. Documented in `event_log.gd`.
-- **5-min cache TTL trap**: when polling for slow operations, prefer ~270s waits or 1200-1800s waits. 300s is the worst-of-both option.
+- **The user is non-technical and only interacts via Claude.** They don't open VS Code manually, they don't run terminal commands themselves.
+- **The user wants Claude-time estimates, not human-dev hours.**
+- **Send `PushNotification` at end of every response that hands control back.**
+- **EventLog.replay does NOT re-append commands/events to the replayed state's log** — the log is the input, not the output. Documented in `event_log.gd`.
+- **5-min cache TTL trap**: when polling for slow operations, prefer ~270s or 1200-1800s waits.
 
 ### Branch / files involved
-- `main` is current at `ace69d6`. All chunk branches merged.
-- This session-end commit lands on `session-end-2026-05-10` and gets merged to main as part of session close.
-- All companion files in place: `RECAPS.md`, `TECH_DEBT.md`, `IDEAS.md`, `SESSION_PROTOCOL.md`.
+- `main` at `0278177`. All Phase A-L branches merged.
+- 12 audit PR branches open (none merged into main).
+- `dashboard/` on main — unrelated Next.js project, decision pending.
