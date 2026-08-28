@@ -66,3 +66,13 @@
   - Once unblocked: skeleton AI (monster turn-end mechanism), then `fighter_shield_bash` as the first ability that applies an effect on hit.
   - More content authoring as desired (more abilities via `.tres`, more monster defs).
   - Phase 2 prep starts when architecture extensions slow down — combat scene UI, dice-roll animation, the centerpiece dice-feel polish per `ROADMAP.md` Phase 2.
+
+---
+
+## 2026-08-28 (Fri) — Week 16 audit (101-day silence; 15 audit PRs open, none merged)
+
+- **What shipped**: Nothing — zero game-dev commits since 2026-05-10 (Phase L), zero commits of any kind since 2026-05-19 (101 days). The Friday audit routine has run every week without fail, producing 15 PRs (2026-05-15 through 2026-08-21); none have been merged or closed.
+- **What got hard**: The audit has nothing to report except the silence itself. AUDIT-CRITICAL issues #24 (opened 2026-05-22) and #26 (opened 2026-06-05) flagging the gap are both open with no response. Architecture is solid, CI is green on all 67 runs — technically the project is healthy; the only thing missing is activity.
+- **What surprised me**: That the audit routine kept running faithfully for 15 weeks into silence. The mechanism worked exactly as designed; the gap it is flagging is significant regardless of the reason for it.
+- **How I felt**: _(user fills in)_
+- **What's next week**: When you're ready — no pressure, no schedule — read `RESILIENCE.md` first. Then close issues #24 and #26 (either with a note or silently). Then merge or close the 15 open audit PRs. Then, if you want to resume, start small: run the tests, re-read `CLAUDE.md`, do one tiny thing. Phase 2 (combat scene UI, dice animation) is the natural next step; the architecture is waiting.
