@@ -66,3 +66,13 @@
   - Once unblocked: skeleton AI (monster turn-end mechanism), then `fighter_shield_bash` as the first ability that applies an effect on hit.
   - More content authoring as desired (more abilities via `.tres`, more monster defs).
   - Phase 2 prep starts when architecture extensions slow down — combat scene UI, dice-roll animation, the centerpiece dice-feel polish per `ROADMAP.md` Phase 2.
+
+---
+
+## 2026-09-04 (Fri) — Week 17 audit (117-day development gap; 16th consecutive zero-commit week)
+
+- **What shipped**: Nothing this week. No game development commits since Phase L on 2026-05-10 (117 days). Automated Friday audit PR only. The 16 prior audit PRs (#21–41) remain open and unmerged on GitHub — RECAPS entries from those branches have not yet landed on main.
+- **What got hard**: _(user fills in)_
+- **What surprised me**: _(user fills in)_
+- **How I felt**: _(user fills in)_
+- **What's next week**: When you're ready to return — Phase 2 is the next milestone: combat scene UI, dice-roll animation, the centerpiece dice-feel polish per `ROADMAP.md`. Architecture is solid and CI is green. The project is waiting for you, not broken. See the "Currently in flight" section of CLAUDE.md for the full pickup state.
