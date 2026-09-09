@@ -66,3 +66,13 @@
   - Once unblocked: skeleton AI (monster turn-end mechanism), then `fighter_shield_bash` as the first ability that applies an effect on hit.
   - More content authoring as desired (more abilities via `.tres`, more monster defs).
   - Phase 2 prep starts when architecture extensions slow down — combat scene UI, dice-roll animation, the centerpiece dice-feel polish per `ROADMAP.md` Phase 2.
+
+---
+
+## 2026-05-15 (Fri) — Week 2 (Phases A–L: simulation depth pass)
+
+- **What shipped**: 12 phases merged to main over the extended 5/10 Sunday session (continuing after the Week 1 close commit): Phase A (poison, slow, regenerate status effects), Phase B (skeleton_archer, zombie, ghoul monster defs), Phase C (heal path + fighter_second_wind), Phase F (damage types + per-actor resistance dictionaries), Phase G (champion_great_weapon_master), Phase H (execute mechanic + champion_critical_finisher), Phase I (bleed DOT + resistance-aware ticking), Phase J (monster AI + AP-driven monster turns — resolves IDEAS Q1), Phase K (AbilityDef.applies_effects + stacking refresh — resolves IDEAS Q2a/b), Phase L (save throws + fighter_shield_bash — resolves IDEAS Q2c). Test surface: 13 files green. Main now at `92e31c5`.
+- **What got hard**: The autonomous-work lane ran dry after Phase I — that PR explicitly flagged "The autonomous lane is exhausted without resolving the IDEAS questions." Pivoting from pure implementation to design-question resolution was the hinge moment. Once the IDEAS questions were answered, Phases J/K/L shipped quickly.
+- **What surprised me**: All three open IDEAS design questions resolved and fully implemented in a single session (Phases J/K/L). Combat went from unidirectional (player attacks monster) to genuinely bidirectional — monsters act back, consume AP, can be stunned/slowed, take typed/resistant damage, trigger saves — in one afternoon. The architecture held without new cracks.
+- **How I felt**: _(user fills in)_
+- **What's next week**: Update "Currently in flight" in CLAUDE.md (stale — still references `ace69d6` and lists both IDEAS questions as blockers; both are resolved). Decide whether to split `use_ability_command.gd` (352 lines, over the 150-line rule) before more mechanics land. Phase 2 prep: combat scene UI, dice-roll animation, the centerpiece dice-feel experience.
