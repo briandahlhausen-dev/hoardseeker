@@ -134,74 +134,58 @@ The user is non-technical and may not know what tools or services exist. When yo
 
 > Updated at end of every session. Empty if nothing in flight. Read first thing on session start.
 
-**Last updated**: 2026-05-10 (Sun) — Phase 1 architecture complete (week 1 close)
+**Last updated**: 2026-09-11 (Fri) — automated Friday audit; no game dev since 2026-05-19
 
 ### Where we are
-**Phase 1 architecture is done.** All foundational simulation primitives are in place and tested. The last 9 chunks (across Sat 2026-05-09 + Sun 2026-05-10) shipped every Phase-1 architectural piece per ROADMAP.md plus three follow-on additions (status effects, fixture migration, full-fight integration replay test).
+**Phases 1 + A–L complete. All IDEAS.md questions resolved. Architecture healthy. Project is in an extended pause.**
 
-`main` is at `ace69d6` (post chunk-9 merge). Working tree clean. CI green on every push since 2026-05-08.
+`main` is at `0278177` (feat: configurable event monitoring dashboard, 2026-05-19). CI green on all 69 runs. 124 days since last game commit (Phase L, 2026-05-10).
+
+**17 open Friday audit PRs** (#21–#42) have never been merged. They contain RECAPS entries and prior CLAUDE.md updates from each week's automated audit. When you're ready to resume, the cleanest path is: close those stale PRs in batch (they're docs-only and this audit supersedes them), then start fresh from main.
+
+**4 open AUDIT-CRITICAL issues**: #24, #26, #35, #39 — all flagging the same extended-gap condition. No new issue filed this week (redundant). Close them alongside the stale PRs when resuming.
 
 ### Test surface
-**12 test files green** on `main`:
-- `test_rng_determinism` (12 assertions, includes duplicate-safety regression tests)
-- `test_game_state_serialization` (7)
-- `test_attack_command` (11) — uses `find_actor` since chunk 2
-- `test_command_processor` (7)
-- `test_end_turn_command` (9)
-- `test_monster_state` (10)
-- `test_scripted_fight` (6 sub-tests, includes 50-seed determinism gate)
-- `test_ability_def` (7) — covers fighter_slash, fighter_cleave, fighter_power_strike
-- `test_use_ability_command` (18, includes multi-target coverage)
-- `test_replay` (6 sub-tests, includes 30-seed sweep + full-fight integration)
-- `test_monster_def` (6) — covers skeleton_warrior + spawn_monster_state contract
-- `test_status_effect` (13) — covers stun + tick mechanics
+**13 test files green** on `main` (12 from Phase 1 + `test_monster_ai` from Phase J):
+- `test_rng_determinism`, `test_game_state_serialization`, `test_attack_command`, `test_command_processor`, `test_end_turn_command`, `test_monster_state`, `test_scripted_fight`, `test_ability_def`, `test_use_ability_command`, `test_replay`, `test_monster_def`, `test_status_effect`, `test_monster_ai`
 
-### What architecture exists
-- **Resources**: `GameState`, `PlayerState`, `MonsterState` (siblings, no CombatantState base — see DECISIONS), `AbilityDef`, `MonsterDef`, `StatusEffect`, `EventLog`, `RNGService` (duplicate-safe via persisted `rng_state`)
-- **Commands**: `AttackCommand`, `EndTurnCommand` (incl. status-effect tick), `UseAbilityCommand` (single + multi-target via `target_ids`), `ApplyStatusEffectCommand`. Processed via `CommandProcessor`; logged in `EventLog`.
-- **Content**: `fighter_slash.tres`, `fighter_cleave.tres`, `fighter_power_strike.tres`, `skeleton_warrior.tres`. All tests use the canonical defs via `MonsterDef.spawn_monster_state()` since chunk 9.
-- **Replay**: `EventLog.replay()` round-trips against fresh initial state. Full-fight test composes all four concrete Commands.
+### What architecture exists (as of main = 0278177)
+- **Resources**: `GameState`, `PlayerState`, `MonsterState`, `AbilityDef` (incl. `applies_effects`, save fields), `MonsterDef`, `StatusEffect`, `EventLog`, `RNGService`
+- **Commands**: `AttackCommand`, `EndTurnCommand` (status-effect tick + AP-driven monster turns), `UseAbilityCommand` (heal + damage paths, multi-target, save throws), `ApplyStatusEffectCommand`
+- **Monster AI**: `MonsterAI` helper; monsters use AP-driven turns via shared `EndTurnCommand` pipeline
+- **Content** (`.tres`): `fighter_slash`, `fighter_cleave`, `fighter_power_strike`, `fighter_second_wind`, `fighter_shield_bash` (with save throw); `champion_great_weapon_master`, `champion_critical_finisher`; `skeleton_warrior`, `skeleton_archer`, `zombie`, `ghoul`
+- **Effects**: stun, bleed (DOT), poison, slow, regenerate — all data-driven on `StatusEffect`; stacking = refresh-on-same-id
+- **Damage types + resistances**: typed damage on `AbilityDef`; per-actor resistance dictionaries on `MonsterState`/`PlayerState`
+- **Dashboard**: `dashboard/` — Next.js event monitoring dashboard (configurable, 2026-05-19)
+- **Replay**: `EventLog.replay()` round-trips against fresh initial state. Full-fight integration test covers all Commands.
 
-### What's blocked (and what unblocks it)
-Two design questions in [IDEAS.md](IDEAS.md) gate the remaining real architectural work:
-
-1. **Monster turn flow** (2026-05-09 entry): when monster AI lands, do monster turns share the AP-refresh path (extending `EndTurnCommand` via `find_actor`), or use a separate mechanism? Three decision-driving questions in the entry.
-2. **Status-effect / ability integration + stacking + save throws** (2026-05-10 entry): how does `AbilityDef` declare effects on hit? What happens when an effect is applied twice? Where does save-throw resolution live? All three unblock `fighter_shield_bash` (the next ability per CONTENT.md), so they likely land as a single follow-up design pass.
+### File size violations (pre-existing, flagged since Phase L)
+- `use_ability_command.gd`: 352 lines — over 150-line rule. Candidate for split when Phase 2 work begins.
+- `end_turn_command.gd`: 194 lines — marginally over. Monitor.
 
 ### What needs to happen first when we resume
-
-1. **Re-read [IDEAS.md](IDEAS.md)** — both entries spell out the questions concretely with decision-driving questions for each.
-2. **Engage the user on those questions** — don't pick the answers unilaterally; the user is the director per VIBE_CODING.md.
-3. **Once unblocked**: skeleton AI (monster turn-end mechanism), then `fighter_shield_bash` as the first effect-applying ability.
-
-If the user wants to keep moving without unblocking design, autonomous-friendly options:
-- More monster defs (`skeleton_archer.tres`, `zombie.tres`) — pure-data adds, low value
-- More ability defs that fit existing patterns — likewise
-
-### Any blockers
-- None on the project itself. Architecture is solid, CI is green.
-- Two design calls in IDEAS.md gate the next architectural chunks; not "blockers" in the sense of broken state, but real ceilings on what the next chunk can be.
+1. **Merge or close the 17 open audit PRs** — easiest: close #21–#41 as superseded, then decide whether to merge #42 + this PR (#43) or just close them too after manually applying the RECAPS entry.
+2. **Close the 4 open AUDIT-CRITICAL issues** (#24, #26, #35, #39) — the extended gap is acknowledged; they've served their purpose.
+3. **Phase 2**: combat scene UI, dice-roll animation, dice-feel polish per `ROADMAP.md`. Architecture is ready. No design questions are currently open.
+4. **`use_ability_command.gd` refactor** — 352 lines. Good first task for a return session (low risk, improves long-term health).
 
 ### Open admin items (tracked, not blocking)
-- LLC formation pending (Month 1-2 per `VIBE_CODING.md`)
+- LLC formation pending (Month 1-2 per `VIBE_CODING.md`) — still pending
 - Wacom tablet purchase pending (when art cleanup begins, ~Month 4-6)
-- `Hoardseeker - Copy` folder on user's old Desktop — legacy, user to decide
 - Pricing decision (~$14.99 vs $19.99) deferred to ~Month 14 per `DECISIONS.md`
-- `RECAPS.md` 2026-05-08 entry still has "How I felt" blank; 2026-05-10 entry (this session-end commit) also has the line blank
-- Dispatch / mobile push setup is partial (per TECH_DEBT.md). User has Stop-hook desktop sound working (Ring01.wav). Phone push still needs Dispatch via Claude Desktop → Cowork → Dispatch.
-- Friday audit routine (`trig_014n5heywcVN3czDASX9bhgL`) — first run **2026-05-15 around 4pm ET**; will open a PR titled `Friday audit YYYY-MM-DD` against main.
+- `RECAPS.md` "How I felt" lines are blank on both 2026-05-08 and 2026-05-10 entries
+- Dispatch / mobile push setup still partial (per TECH_DEBT.md)
 
-### Working memory worth carrying over (not in code or commits)
+### Working memory worth carrying over
 - **`gh pr merge --delete-branch` fails from a worktree**. Workaround: `--delete-branch=false` + `git fetch --prune`. See TECH_DEBT.md.
-- **Tests use `preload()` rather than `class_name`**. preload makes tests robust on fresh checkouts before the first `--import` pass.
-- **Run tests locally via `bash hoardseeker/tests/run.sh`** — wraps the `--import` step.
-- **The user is non-technical and only interacts via Claude.** They don't open VS Code manually, they don't run terminal commands themselves. See `user_workflow_claude_only.md` memory.
+- **Tests use `preload()` rather than `class_name`**. Robust on fresh checkouts before first `--import`.
+- **Run tests via `bash hoardseeker/tests/run.sh`** — wraps the `--import` step.
+- **The user is non-technical and only interacts via Claude.** See `user_workflow_claude_only.md` memory.
 - **The user wants Claude-time estimates, not human-dev hours.** See `feedback_estimates_use_claude_time.md` memory.
 - **Send `PushNotification` at end of every response that hands control back.** See `user_notification_sound.md` memory.
-- **EventLog.replay does NOT re-append commands/events to the replayed state's log** — the log is the input, not the output. Asserting log-size equality post-replay is a false-positive test pattern. Documented in `event_log.gd`.
-- **5-min cache TTL trap**: when polling for slow operations, prefer ~270s waits or 1200-1800s waits. 300s is the worst-of-both option.
+- **EventLog.replay does NOT re-append to the replayed state's log** — log is input, not output. See `event_log.gd`.
+- **5-min cache TTL trap**: prefer ~270s or 1200-1800s waits. 300s is worst-of-both.
 
 ### Branch / files involved
-- `main` is current at `ace69d6`. All chunk branches merged.
-- This session-end commit lands on `session-end-2026-05-10` and gets merged to main as part of session close.
-- All companion files in place: `RECAPS.md`, `TECH_DEBT.md`, `IDEAS.md`, `SESSION_PROTOCOL.md`.
+- `main` is at `0278177`. All Phase 1 + A–L branches merged.
+- This audit lands on `friday-audit-2026-09-11`, PR #43 against main. Do not merge until user reviews.

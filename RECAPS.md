@@ -66,3 +66,13 @@
   - Once unblocked: skeleton AI (monster turn-end mechanism), then `fighter_shield_bash` as the first ability that applies an effect on hit.
   - More content authoring as desired (more abilities via `.tres`, more monster defs).
   - Phase 2 prep starts when architecture extensions slow down — combat scene UI, dice-roll animation, the centerpiece dice-feel polish per `ROADMAP.md` Phase 2.
+
+---
+
+## 2026-09-11 (Fri) — Week 18 audit (124-day gap; 17 open audit PRs)
+
+- **What shipped**: No game development this week. Automated Friday audit PR #18 opened (`friday-audit-2026-09-11`). Note: Phases A–L + event monitoring dashboard (2026-05-19) are complete on main but not reflected in this RECAPS entry because prior audit PRs (#21–#42) are still unmerged. Actual game state at `main` is `0278177`.
+- **What got hard**: Extended gap continues — 124 days since last game commit (Phase L, 2026-05-10). 17 prior audit PRs remain open and unreviewed. 4 AUDIT-CRITICAL issues (#24, #26, #35, #39) remain open. The project code is healthy; CI has been green on every one of the 69 runs.
+- **What surprised me**: _(user fills in, or omit)_
+- **How I felt**: _(user fills in)_
+- **What's next week**: When ready to resume — Phase 2: combat scene UI, dice-roll animation, the centerpiece dice-feel polish per `ROADMAP.md`. The architecture is solid and waiting. The 17 open audit PRs can be closed in batch (they're doc-only; this one supersedes them for RECAPS + CLAUDE.md state).
