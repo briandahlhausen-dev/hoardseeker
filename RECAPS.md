@@ -66,3 +66,23 @@
   - Once unblocked: skeleton AI (monster turn-end mechanism), then `fighter_shield_bash` as the first ability that applies an effect on hit.
   - More content authoring as desired (more abilities via `.tres`, more monster defs).
   - Phase 2 prep starts when architecture extensions slow down — combat scene UI, dice-roll animation, the centerpiece dice-feel polish per `ROADMAP.md` Phase 2.
+
+---
+
+## 2026-09-18 (Fri) — Week 19 audit (131-day gap; 18 open audit PRs unmerged)
+
+- **What shipped**: Nothing — automated audit only. Last game commit was 2026-05-10 (Phase L: save throws + fighter_shield_bash, 131 days ago). Last commit of any kind was 2026-05-19 (monitoring dashboard, 122 days ago). Phases 1 + A–L are complete and CI has been green on every run throughout the gap (70 CI runs total).
+- **What got hard**: _(no dev activity this week)_
+- **What surprised me**: _(user fills in)_
+- **How I felt**: _(user fills in)_
+- **What's next week**: When you're ready to resume — Phase 2 is the next milestone per ROADMAP.md (combat scene UI, dice-roll animation, the centerpiece feel). The codebase is in good shape: CI green, no BLOCKER/HIGH debt, all IDEAS.md questions resolved. 18 open audit PRs are waiting for a quick sweep-close whenever you have a moment. The architecture is solid and the project is ready to pick back up.
+
+---
+
+## 2026-09-25 (Fri) — Week 20 audit (138-day gap; 19 open audit PRs unmerged)
+
+- **What shipped**: Nothing — automated audit only. Last game commit was 2026-05-10 (Phase L, 138 days ago). Last commit of any kind was 2026-05-19 (monitoring dashboard, 129 days ago). Phases 1 + A–L complete; CI green throughout (71 total runs).
+- **What got hard**: _(no dev activity this week)_
+- **What surprised me**: _(user fills in)_
+- **How I felt**: _(user fills in)_
+- **What's next week**: When you're ready — Phase 2 is next (combat scene UI, dice-roll animation, the centerpiece dice-feel). CI green, no BLOCKER/HIGH debt, no TODOs in code. 19 open audit PRs waiting for a sweep-close. The project is in good shape whenever you come back.
